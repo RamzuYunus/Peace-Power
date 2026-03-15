@@ -1,0 +1,12 @@
+packages:
+  "framer-motion": "For smooth breathing pacer animations and page transitions"
+  "clsx": "Utility for conditional class names"
+  "tailwind-merge": "Utility for merging tailwind classes safely"
+  "date-fns": "For formatting history dates"
+
+images: []
+
+notes:
+  - "This is a pure client-side application. No backend or API calls are used."
+  - "All scan data is persisted using localStorage."
+  - "Camera access uses navigator.mediaDevices.getUserMedia and expects mobile devices."

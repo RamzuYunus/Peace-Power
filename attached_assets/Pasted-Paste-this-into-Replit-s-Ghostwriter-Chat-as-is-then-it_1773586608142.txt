@@ -1,0 +1,96 @@
+Paste this into Replit’s Ghostwriter / Chat as-is, then iterate on the generated code:
+
+***
+
+Build a complete, production-ready web app that uses the phone’s camera as a PPG sensor to measure HRV and compute a HeartMath‑style coherence score, with no external hardware.
+
+**Overall requirements**
+
+- Stack: pure HTML, CSS, and vanilla JavaScript, no frameworks or build tools.  
+- Single-page app, responsive layout, optimized for mobile (Android + iOS) browsers.  
+- Must run entirely client-side in the browser using `getUserMedia`. No backend.  
+- Output: a working `index.html` plus any small JS/CSS files, all static and self-contained.
+
+**Core functionality**
+
+1. Camera / PPG capture
+   - Use `navigator.mediaDevices.getUserMedia` to access the **rear** camera where possible.
+   - User places fingertip over camera and flash; app samples at ~30 fps.
+   - Capture frames into a hidden `<video>` and `<canvas>`, extract average **red channel** over a small central ROI to derive a raw PPG signal.
+   - Implement:
+     - Basic motion and saturation checks (warn user if signal is too flat or too noisy).
+     - Graceful error handling for permission denied / no camera.
+
+2. Scan workflow
+   - Each “session” is a **2‑minute scan**.
+   - UI flow:
+     - Start screen: short instructions, “Start 2‑min Scan” button.
+     - During scan: show timer countdown from 2:00, real‑time PPG waveform, and a simple breathing pacer (e.g., circle expanding/contracting at ~5–6 breaths per minute).
+     - End of scan: automatically stop camera, process data, and show results.
+   - Allow the user to do **3–5 scans per day**; track the count in `localStorage`.
+
+3. Signal processing & HRV
+   - From the raw red-channel signal:
+     - Detrend and smooth the signal.
+     - Band‑pass filter around **0.8–3 Hz** (approx. 48–180 bpm).
+     - Detect peaks to estimate beat‑to‑beat intervals (IBIs, in ms).
+   - From IBIs compute:
+     - Heart rate (bpm).
+     - RMSSD and SDNN (time‑domain HRV metrics).
+
+4. Coherence score (HeartMath‑style)
+   - Implement a simplified coherence metric:
+     - Interpolate IBIs to an evenly sampled RR interval series.
+     - Compute a frequency spectrum (use an FFT library or implement a simple FFT) and estimate power in the **0.04–0.26 Hz** band.
+     - Compute coherence as a ratio of peak power in the main LF peak to total power in that band.
+   - Map coherence to qualitative levels:
+     - Low / Medium / High coherence, with thresholds in code.
+   - Show:
+     - Numeric HR (bpm), RMSSD, and a **coherence level** with a visual indicator (e.g., colored bar or gauge).
+
+5. UI/UX
+   - Mobile‑first layout, one column.
+   - Sections:
+     - Home / Today: shows how many scans completed today (out of 5) and last scan results.
+     - Scan screen: live waveform and breathing pacer.
+     - History: simple table or list showing date/time, HR, RMSSD, and coherence level for past scans (stored in `localStorage`).
+   - Provide clear instructions:
+     - “Cover camera and flash fully with fingertip.”
+     - “Stay still; avoid moving and bright ambient light.”
+     - Show message if signal quality is too poor and suggest retry.
+
+6. Local storage
+   - Use `localStorage` (or `indexedDB` if easier for you) to store:
+     - Per-scan: timestamp, HR, RMSSD, coherence numeric value, coherence level.
+     - Per-day: number of scans completed.
+   - Implement helper functions to:
+     - Save a scan result.
+     - Load today’s scans and all history.
+     - Reset history (with confirmation).
+
+7. PWA support (optional but preferred)
+   - Make this a minimal PWA:
+     - Add `manifest.json` and link it in `<head>`.
+     - Add a basic `service worker` that caches `index.html`, JS, CSS, and icons for offline use.
+   - Ensure the app can be “Add to Home Screen” on mobile and works offline once loaded.
+
+**Code structure**
+
+- `index.html` – full page with all components and mobile-friendly layout.
+- `style.css` – clean, simple, readable styles.
+- `app.js` – all logic for:
+  - camera handling,
+  - signal processing,
+  - HRV and coherence calculations,
+  - history storage,
+  - UI updates.
+- `manifest.json` and `sw.js` for PWA behavior.
+
+**Quality & comments**
+
+- Write clear, modern JS (ES6+).
+- Comment important steps in the signal processing and coherence computation.
+- Avoid external heavy dependencies; if you use a small FFT implementation, include it as a local JS file.
+- Include basic error and edge-case handling (too few beats, short scan, camera errors).
+
+When you’re done, show me the full code for all files, and make sure it runs in the Replit webview and in a mobile browser with a real camera.
