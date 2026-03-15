@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useCallback } from "react";
 import { useGetMe, useLogin, useLogout, useRegister } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { getGetMeQueryKey } from "@workspace/api-client-react";
@@ -7,7 +7,7 @@ export function useAuth() {
   const queryClient = useQueryClient();
 
   const { data: user, isLoading, error } = useGetMe({
-    query: { retry: false, staleTime: 1000 * 60 * 5 },
+    query: { retry: false, staleTime: 0, gcTime: 0 },
   });
 
   const loginMutation = useLogin();
@@ -17,8 +17,8 @@ export function useAuth() {
   const login = useCallback(
     async (email: string, password: string) => {
       const result = await loginMutation.mutateAsync({ data: { email, password } });
-      // Directly set the user in the query cache
-      queryClient.setQueryData(getGetMeQueryKey(), result);
+      // Invalidate and refetch user data
+      await queryClient.invalidateQueries({ queryKey: getGetMeQueryKey() });
       return result;
     },
     [loginMutation, queryClient]
@@ -33,8 +33,8 @@ export function useAuth() {
   const register = useCallback(
     async (name: string, email: string, password: string) => {
       const result = await registerMutation.mutateAsync({ data: { name, email, password } });
-      // Directly set the user in the query cache
-      queryClient.setQueryData(getGetMeQueryKey(), result);
+      // Invalidate and refetch user data
+      await queryClient.invalidateQueries({ queryKey: getGetMeQueryKey() });
       return result;
     },
     [registerMutation, queryClient]
