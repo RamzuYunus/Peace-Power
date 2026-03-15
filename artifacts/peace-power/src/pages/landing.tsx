@@ -69,7 +69,7 @@ export default function Landing() {
           </div>
 
           <h1 className="text-5xl sm:text-6xl font-bold leading-tight tracking-tight text-foreground">
-            Unite Through the{" "}
+            United Empowerment Through the{" "}
             <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
               Power of the Heart
             </span>
@@ -120,10 +120,11 @@ export default function Landing() {
           </p>
           <p className="text-lg text-muted-foreground leading-relaxed max-w-2xl mx-auto">
             Heart coherence — the state of harmonious alignment between mind, body, and spirit
-            — is not just personal wellness. It is a form of collective resonance. When enough
-            people achieve coherence simultaneously, they generate a unified field of
-            compassionate consciousness that radiates outward, shifting the energetic fabric of
-            humanity.
+            — transforms both individual lives and our collective future. For you personally, it enhances
+            mental clarity, emotional resilience, physical health, and inner peace. And it is a form of
+            collective resonance. When enough people achieve coherence simultaneously, they generate a
+            unified field of compassionate consciousness that radiates outward, shifting the energetic
+            fabric of humanity.
           </p>
         </motion.div>
       </section>
