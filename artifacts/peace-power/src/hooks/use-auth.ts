@@ -17,7 +17,8 @@ export function useAuth() {
   const login = useCallback(
     async (email: string, password: string) => {
       const result = await loginMutation.mutateAsync({ data: { email, password } });
-      queryClient.invalidateQueries({ queryKey: getGetMeQueryKey() });
+      // Directly set the user in the query cache
+      queryClient.setQueryData(getGetMeQueryKey(), result);
       return result;
     },
     [loginMutation, queryClient]
@@ -26,13 +27,14 @@ export function useAuth() {
   const logout = useCallback(async () => {
     await logoutMutation.mutateAsync();
     queryClient.setQueryData(getGetMeQueryKey(), null);
-    queryClient.invalidateQueries({ queryKey: getGetMeQueryKey() });
+    queryClient.removeQueries({ queryKey: getGetMeQueryKey() });
   }, [logoutMutation, queryClient]);
 
   const register = useCallback(
     async (name: string, email: string, password: string) => {
       const result = await registerMutation.mutateAsync({ data: { name, email, password } });
-      queryClient.invalidateQueries({ queryKey: getGetMeQueryKey() });
+      // Directly set the user in the query cache
+      queryClient.setQueryData(getGetMeQueryKey(), result);
       return result;
     },
     [registerMutation, queryClient]

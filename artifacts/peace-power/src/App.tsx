@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAuth } from "@/hooks/use-auth";
+import { useEffect } from "react";
 
 import Landing from "@/pages/landing";
 import Login from "@/pages/login";
@@ -19,6 +20,13 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
   const [, navigate] = useLocation();
 
+  // Effect to handle navigation when not authenticated
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      navigate("/login");
+    }
+  }, [isLoading, isAuthenticated, navigate]);
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -28,7 +36,6 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
   }
 
   if (!isAuthenticated) {
-    navigate("/login");
     return null;
   }
 
