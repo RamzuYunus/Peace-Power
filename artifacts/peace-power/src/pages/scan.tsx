@@ -6,6 +6,7 @@ import { Camera, AlertCircle, RefreshCcw, CheckCircle2, HeartPulse } from "lucid
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "wouter";
 import { cn } from "@/lib/utils";
+import { useSubmitScan } from "@workspace/api-client-react";
 
 type ScanState = "idle" | "starting" | "scanning" | "processing" | "results" | "error";
 
@@ -27,6 +28,7 @@ export default function Scan() {
   const waveBufferRef = useRef<number[]>([]); // Small buffer for rendering wave
   
   const { addScan } = useScans();
+  const submitScanMutation = useSubmitScan();
 
   // Breathing pacer state (5s inhale, 5s exhale)
   const [breathPhase, setBreathPhase] = useState<"inhale" | "exhale">("inhale");
@@ -207,6 +209,17 @@ export default function Scan() {
       const res = processPpgSignal(times, vals);
       setResult(res);
       addScan(res);
+      // Also sync to backend (non-blocking)
+      submitScanMutation.mutate({
+        data: {
+          heartRate: res.heartRate,
+          rmssd: res.rmssd,
+          sdnn: res.sdnn,
+          coherenceScore: res.coherenceScore,
+          coherenceLevel: res.coherenceLevel,
+          quality: res.quality,
+        },
+      });
       setState("results");
     } catch (e: any) {
       console.error(e);
@@ -382,7 +395,7 @@ export default function Scan() {
                 >
                   Scan Again
                 </button>
-                <Link href="/">
+                <Link href="/dashboard">
                   <button className="w-full bg-foreground text-background py-4 rounded-xl font-semibold shadow-md">
                     Done
                   </button>

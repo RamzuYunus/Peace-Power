@@ -1,22 +1,26 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Peace Power API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: auth
+    description: Authentication operations
+  - name: scans
+    description: Scan operations
+  - name: admin
+    description: Admin operations
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +28,259 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /auth/register:
+    post:
+      operationId: register
+      tags: [auth]
+      summary: Register a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterBody"
+      responses:
+        "201":
+          description: Registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserPublic"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Email already in use
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginBody"
+      responses:
+        "200":
+          description: Logged in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserPublic"
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/logout:
+    post:
+      operationId: logout
+      tags: [auth]
+      summary: Logout
+      responses:
+        "204":
+          description: Logged out
+
+  /auth/me:
+    get:
+      operationId: getMe
+      tags: [auth]
+      summary: Get current user
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserPublic"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /scans:
+    post:
+      operationId: submitScan
+      tags: [scans]
+      summary: Submit a scan result
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SubmitScanBody"
+      responses:
+        "201":
+          description: Scan saved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScanRecord"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /scans/me:
+    get:
+      operationId: getMyScans
+      tags: [scans]
+      summary: Get my scan history
+      responses:
+        "200":
+          description: My scans
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ScanRecord"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /admin/members:
+    get:
+      operationId: getAdminMembers
+      tags: [admin]
+      summary: List all members with stats (admin only)
+      responses:
+        "200":
+          description: Members list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MemberWithStats"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Not an admin
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /admin/members/{userId}/scans:
+    get:
+      operationId: getAdminMemberScans
+      tags: [admin]
+      summary: Get all scans for a member (admin only)
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Member scans
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ScanRecord"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Not an admin
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /admin/stats:
+    get:
+      operationId: getAdminStats
+      tags: [admin]
+      summary: Get global stats (admin only)
+      responses:
+        "200":
+          description: Global stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminStats"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Not an admin
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /admin/members/{userId}/set-admin:
+    post:
+      operationId: setAdminRole
+      tags: [admin]
+      summary: Set or remove admin role for a member
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SetAdminRoleBody"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserPublic"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Not an admin
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +291,185 @@ components:
       required:
         - status
 
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+
+    RegisterBody:
+      type: object
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+        password:
+          type: string
+      required:
+        - name
+        - email
+        - password
+
+    LoginBody:
+      type: object
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+      required:
+        - email
+        - password
+
+    UserPublic:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+        isAdmin:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - email
+        - isAdmin
+        - createdAt
+
+    SubmitScanBody:
+      type: object
+      properties:
+        heartRate:
+          type: integer
+        rmssd:
+          type: integer
+        sdnn:
+          type: integer
+        coherenceScore:
+          type: number
+        coherenceLevel:
+          type: string
+        quality:
+          type: string
+      required:
+        - heartRate
+        - rmssd
+        - sdnn
+        - coherenceScore
+        - coherenceLevel
+        - quality
+
+    ScanRecord:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        heartRate:
+          type: integer
+        rmssd:
+          type: integer
+        sdnn:
+          type: integer
+        coherenceScore:
+          type: number
+        coherenceLevel:
+          type: string
+        quality:
+          type: string
+        scannedAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - userId
+        - heartRate
+        - rmssd
+        - sdnn
+        - coherenceScore
+        - coherenceLevel
+        - quality
+        - scannedAt
+        - createdAt
+
+    MemberWithStats:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+        isAdmin:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        scanCount:
+          type: integer
+        lastScan:
+          oneOf:
+            - $ref: "#/components/schemas/ScanRecord"
+            - type: "null"
+        avgCoherenceScore:
+          type: ["number", "null"]
+        avgHeartRate:
+          type: ["number", "null"]
+      required:
+        - id
+        - name
+        - email
+        - isAdmin
+        - createdAt
+        - scanCount
+        - lastScan
+        - avgCoherenceScore
+        - avgHeartRate
+
+    AdminStats:
+      type: object
+      properties:
+        totalMembers:
+          type: integer
+        totalScans:
+          type: integer
+        avgCoherenceScore:
+          type: ["number", "null"]
+        avgHeartRate:
+          type: ["number", "null"]
+        highCoherenceCount:
+          type: integer
+        mediumCoherenceCount:
+          type: integer
+        lowCoherenceCount:
+          type: integer
+      required:
+        - totalMembers
+        - totalScans
+        - avgCoherenceScore
+        - avgHeartRate
+        - highCoherenceCount
+        - mediumCoherenceCount
+        - lowCoherenceCount
+
+    SetAdminRoleBody:
+      type: object
+      properties:
+        isAdmin:
+          type: boolean
+      required:
+        - isAdmin
