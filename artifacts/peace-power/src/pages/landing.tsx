@@ -179,6 +179,74 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* Science of Heart-Brain Coherence */}
+      <section className="px-6 py-20 max-w-4xl mx-auto">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="text-center mb-16"
+        >
+          <h2 className="text-3xl sm:text-4xl font-bold mb-4">Understanding Heart-Brain Coherence</h2>
+          <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+            Heart-brain coherence, also known as cardiac or psychophysiological coherence, refers to a
+            harmonious synchronization between heart rhythms, brain activity, and the nervous system,
+            often measured via heart rate variability (HRV). This state promotes optimal functioning
+            and is linked to self-regulation techniques like focused breathing.
+          </p>
+        </motion.div>
+
+        <div className="space-y-8">
+          {/* Stress & Emotional Benefits */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="bg-card border border-border/60 rounded-2xl p-8 space-y-4"
+          >
+            <h3 className="text-2xl font-bold text-foreground">Key Benefits: Stress Reduction & Emotional Resilience</h3>
+            <p className="text-muted-foreground text-lg leading-relaxed">
+              Achieving heart-brain coherence reduces stress and anxiety by balancing the autonomic nervous
+              system, leading to calmer states and lower cortisol levels. It enhances emotional stability and
+              resilience, with studies showing drops in depression (up to 56%), fatigue (48%), and anxiety (46%).
+            </p>
+          </motion.div>
+
+          {/* Cognitive Gains */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.1 }}
+            className="bg-card border border-border/60 rounded-2xl p-8 space-y-4"
+          >
+            <h3 className="text-2xl font-bold text-foreground">Cognitive Gains: Clarity & Performance</h3>
+            <p className="text-muted-foreground text-lg leading-relaxed">
+              Coherence boosts mental clarity, focus, decision-making, and creativity through improved HRV
+              patterns that facilitate cortical function and prefrontal activity. Research correlates higher
+              coherence with better cognitive performance, memory, and problem-solving, even in high-stress
+              groups like pilots or students.
+            </p>
+          </motion.div>
+
+          {/* Physical Health */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.2 }}
+            className="bg-card border border-border/60 rounded-2xl p-8 space-y-4"
+          >
+            <h3 className="text-2xl font-bold text-foreground">Physical Health: Sleep, Immunity & Resilience</h3>
+            <p className="text-muted-foreground text-lg leading-relaxed">
+              It improves sleep quality (30% enhancement), immune function via increased immunoglobulins, and
+              hormonal balance, including oxytocin and DHEA. Long-term practice lowers blood pressure, supports
+              recovery from conditions like hypertension or PTSD, and increases HRV for greater physiological resilience.
+            </p>
+          </motion.div>
+        </div>
+      </section>
+
       {/* CTA */}
       <section className="px-6 py-20 text-center max-w-2xl mx-auto">
         <motion.div
