@@ -18,11 +18,11 @@ app.use(
     store: new PostgresStore({ pool }),
     secret: process.env.SESSION_SECRET || "peace-power-session-secret-2026",
     resave: false,
-    saveUninitialized: false,
+    saveUninitialized: true, // Auto-save empty sessions so they persist in DB
     cookie: {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax", // Same-site by default; frontend and API are on same domain
+      secure: false, // Works on both http (dev) and https (prod behind proxy)
+      sameSite: "lax",
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     },
   })
