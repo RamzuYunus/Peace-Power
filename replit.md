@@ -48,6 +48,14 @@ A humanitarian-themed mobile web app for measuring heart coherence using the pho
 - **Signal processing**: Detrending, smoothing, peak detection, RMSSD/SDNN, FFT-based coherence
 - **Breathing pacer**: Animated inhale/exhale guide at ~6 breaths/min
 - **Local + backend storage**: Results stored in localStorage AND synced to PostgreSQL
+
+### Auth Flow Fix (March 16, 2026)
+**Issue**: Users saw flash of "signed in" then redirected back to login on published app.
+**Root cause**: Session cookie had `SameSite=none` in production (requires Secure + cross-site setup), but frontend and API are same-site behind proxy.
+**Fix**: 
+1. Changed `sameSite: "lax"` in production (line 23, `artifacts/api-server/src/app.ts`)
+2. Added explicit `session.save()` before login/register responses (ensures session persists before client makes follow-up requests)
+3. Increased React Query cache GC time to 5 minutes and use `setQueryData` on login/register (prevents cache eviction during page navigation)
 - **Admin portal**: View all members, scan histories, coherence stats, grant/revoke admin roles
 - **First user = admin**: The first registered user automatically gets admin access
 
