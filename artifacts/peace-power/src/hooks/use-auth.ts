@@ -3,11 +3,18 @@ import { useGetMe, useLogin, useLogout, useRegister } from "@workspace/api-clien
 import { useQueryClient } from "@tanstack/react-query";
 import { getGetMeQueryKey } from "@workspace/api-client-react";
 
+// 5 minute garbage collection time — keeps user data in cache during navigation
+const GC_TIME = 5 * 60 * 1000;
+
 export function useAuth() {
   const queryClient = useQueryClient();
 
   const { data: user, isLoading, error } = useGetMe({
-    query: { retry: false, staleTime: 0, gcTime: 0 },
+    query: {
+      retry: false,
+      staleTime: 0,
+      gcTime: GC_TIME,
+    },
   });
 
   const loginMutation = useLogin();
@@ -17,7 +24,8 @@ export function useAuth() {
   const login = useCallback(
     async (email: string, password: string) => {
       const result = await loginMutation.mutateAsync({ data: { email, password } });
-      // Set the user data directly in the cache from the response
+      // Immediately populate cache with the returned user data.
+      // This avoids a refetch race between page unmount and AuthGuard mount.
       queryClient.setQueryData(getGetMeQueryKey(), result);
       return result;
     },
@@ -33,7 +41,7 @@ export function useAuth() {
   const register = useCallback(
     async (name: string, email: string, password: string) => {
       const result = await registerMutation.mutateAsync({ data: { name, email, password } });
-      // Set the user data directly in the cache from the response
+      // Immediately populate cache with the returned user data.
       queryClient.setQueryData(getGetMeQueryKey(), result);
       return result;
     },

@@ -40,6 +40,12 @@ router.post("/auth/register", async (req, res): Promise<void> => {
 
   req.session.userId = user.id;
 
+  // Explicitly save session before responding so the cookie is persisted
+  // before the client makes any follow-up requests.
+  await new Promise<void>((resolve, reject) =>
+    req.session.save((err) => (err ? reject(err) : resolve()))
+  );
+
   res.status(201).json(
     LoginResponse.parse({
       id: user.id,
@@ -78,6 +84,12 @@ router.post("/auth/login", async (req, res): Promise<void> => {
   }
 
   req.session.userId = user.id;
+
+  // Explicitly save session before responding so the cookie is persisted
+  // before the client makes any follow-up requests.
+  await new Promise<void>((resolve, reject) =>
+    req.session.save((err) => (err ? reject(err) : resolve()))
+  );
 
   res.json(
     LoginResponse.parse({
