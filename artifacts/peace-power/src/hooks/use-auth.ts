@@ -6,11 +6,9 @@ import { getGetMeQueryKey } from "@workspace/api-client-react";
 export function useAuth() {
   const queryClient = useQueryClient();
 
-  const getMeQuery = useGetMe({
+  const { data: user, isLoading, error } = useGetMe({
     query: { retry: false, staleTime: 0, gcTime: 0 },
   });
-
-  const { data: user, isLoading, error, refetch } = getMeQuery;
 
   const loginMutation = useLogin();
   const logoutMutation = useLogout();
@@ -19,11 +17,11 @@ export function useAuth() {
   const login = useCallback(
     async (email: string, password: string) => {
       const result = await loginMutation.mutateAsync({ data: { email, password } });
-      // Wait for the refetch to complete
-      await refetch();
+      // Set the user data directly in the cache from the response
+      queryClient.setQueryData(getGetMeQueryKey(), result);
       return result;
     },
-    [loginMutation, refetch]
+    [loginMutation, queryClient]
   );
 
   const logout = useCallback(async () => {
@@ -35,11 +33,11 @@ export function useAuth() {
   const register = useCallback(
     async (name: string, email: string, password: string) => {
       const result = await registerMutation.mutateAsync({ data: { name, email, password } });
-      // Wait for the refetch to complete
-      await refetch();
+      // Set the user data directly in the cache from the response
+      queryClient.setQueryData(getGetMeQueryKey(), result);
       return result;
     },
-    [registerMutation, refetch]
+    [registerMutation, queryClient]
   );
 
   const isAuthenticated = !!user && !error;
