@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useGetScansMe } from "@workspace/api-client-react";
+import { useGetMyScans } from "@workspace/api-client-react";
 import { type ScanResult } from "@/lib/signal-processing";
 
 const STORAGE_KEY = "peace_power_scans";
@@ -9,7 +9,7 @@ export function useScans() {
   const [isLoaded, setIsLoaded] = useState(false);
   
   // Fetch scans from backend API
-  const { data: backendScans = [] } = useGetScansMe({
+  const { data: backendScans = [] } = useGetMyScans({
     query: { retry: 1 }
   });
 
