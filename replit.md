@@ -49,6 +49,13 @@ A humanitarian-themed mobile web app for measuring heart coherence using the pho
 - **Breathing pacer**: Animated inhale/exhale guide at ~6 breaths/min
 - **Local + backend storage**: Results stored in localStorage AND synced to PostgreSQL
 
+### Social Media Preview (March 17, 2026)
+Added social media link preview for WhatsApp, Facebook, Twitter, and other platforms:
+- Generated custom 1200×630px preview image with teal gradient, golden heart, and branding
+- Updated `index.html` with Open Graph (og:image, og:title, og:description) and Twitter Card meta tags
+- Image shows "Peace Power" with "Unite Through Heart Coherence" tagline
+- Works on WhatsApp, Facebook, LinkedIn, Telegram, Twitter, and all major platforms
+
 ### Auth Flow Fix (March 16, 2026)
 **Issue**: Users saw flash of "signed in" then redirected back to login on published app.
 **Root cause**: Session cookie had `SameSite=none` in production (requires Secure + cross-site setup), but frontend and API are same-site behind proxy.
