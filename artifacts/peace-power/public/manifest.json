@@ -37,9 +37,9 @@
   ],
   "screenshots": [
     {
-      "src": "/opengraph.jpg",
+      "src": "/opengraph.png",
       "sizes": "1200x630",
-      "type": "image/jpeg",
+      "type": "image/png",
       "form_factor": "wide"
     }
   ],
