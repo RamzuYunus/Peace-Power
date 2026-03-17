@@ -49,6 +49,15 @@ A humanitarian-themed mobile web app for measuring heart coherence using the pho
 - **Breathing pacer**: Animated inhale/exhale guide at ~6 breaths/min
 - **Local + backend storage**: Results stored in localStorage AND synced to PostgreSQL
 
+### Scan History Fix (March 17, 2026)
+**Issue**: User scan history disappeared on page refresh, though admin could see scans.
+**Root cause**: The `useScans` hook was only reading from localStorage, never fetching from the backend API where scans are persisted.
+**Fix**: Updated `useScans` to:
+1. Fetch scans from `/api/scans/me` endpoint using `useGetScansMe()` hook
+2. Use backend scans as source of truth
+3. Sync to localStorage for offline capability
+4. Fall back to localStorage if no backend connection
+
 ### Social Media Preview (March 17, 2026)
 Added social media link preview for WhatsApp, Facebook, Twitter, and other platforms:
 - Generated custom 1200×630px preview image with teal gradient, golden heart, and branding

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useGetScansMe } from "@workspace/api-client-react";
 import { type ScanResult } from "@/lib/signal-processing";
 
 const STORAGE_KEY = "peace_power_scans";
@@ -6,18 +7,39 @@ const STORAGE_KEY = "peace_power_scans";
 export function useScans() {
   const [scans, setScans] = useState<ScanResult[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
+  
+  // Fetch scans from backend API
+  const { data: backendScans = [] } = useGetScansMe({
+    query: { retry: 1 }
+  });
 
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        setScans(JSON.parse(stored));
+    // Start with backend scans (source of truth)
+    if (backendScans && backendScans.length > 0) {
+      const transformed = backendScans.map(scan => ({
+        ...scan,
+        timestamp: new Date(scan.createdAt).getTime()
+      })) as ScanResult[];
+      setScans(transformed);
+      // Also sync to localStorage for offline access
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(transformed));
+      } catch (e) {
+        console.error("Failed to sync scans to localStorage", e);
       }
-    } catch (e) {
-      console.error("Failed to load scans", e);
+    } else {
+      // Fallback to localStorage if no backend data
+      try {
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if (stored) {
+          setScans(JSON.parse(stored));
+        }
+      } catch (e) {
+        console.error("Failed to load scans from localStorage", e);
+      }
     }
     setIsLoaded(true);
-  }, []);
+  }, [backendScans]);
 
   const addScan = (scan: ScanResult) => {
     const updated = [scan, ...scans];
@@ -25,7 +47,7 @@ export function useScans() {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
     } catch (e) {
-      console.error("Failed to save scan", e);
+      console.error("Failed to save scan to localStorage", e);
     }
   };
 
