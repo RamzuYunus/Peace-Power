@@ -49,6 +49,13 @@ A humanitarian-themed mobile web app for measuring heart coherence using the pho
 - **Breathing pacer**: Animated inhale/exhale guide at ~6 breaths/min
 - **Local + backend storage**: Results stored in localStorage AND synced to PostgreSQL
 
+### Install Button for Mobile (March 17, 2026)
+Added fixed install button to landing page for better discoverability:
+- **Android**: Shows "Install App" button that triggers native install prompt
+- **iOS**: Shows "Add to Home Screen" button with step-by-step guide modal
+- Smart detection: Button only shows on mobile devices and hides once app is installed
+- File: `src/components/install-button.tsx`, integrated into `src/pages/landing.tsx`
+
 ### Scan History Fix (March 17, 2026)
 **Issue**: User scan history disappeared on page refresh, though admin could see scans.
 **Root cause**: The `useScans` hook was only reading from localStorage, never fetching from the backend API where scans are persisted.

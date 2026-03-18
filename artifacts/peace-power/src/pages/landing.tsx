@@ -2,6 +2,7 @@ import { Link } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { Heart, Globe, Zap, Users, ArrowRight, Shield } from "lucide-react";
 import { motion } from "framer-motion";
+import { InstallButton } from "@/components/install-button";
 
 export default function Landing() {
   const { isAuthenticated, isAdmin, isLoading } = useAuth();
@@ -93,6 +94,7 @@ export default function Landing() {
                 Sign In
               </button>
             </Link>
+            <InstallButton />
           </div>
         </motion.div>
       </section>
