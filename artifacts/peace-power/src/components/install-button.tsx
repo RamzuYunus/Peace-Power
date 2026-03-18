@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Download, X } from "lucide-react";
 
 export function InstallButton() {
-  const [deferredPrompt, setDeferredPrompt] = useState<Event | null>(null);
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [showIOSGuide, setShowIOSGuide] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
@@ -47,14 +47,14 @@ export function InstallButton() {
     }
   };
 
-  // Don't show if already installed or no install option available
-  if (isInstalled || (!deferredPrompt && !isIOS)) {
+  // Hide only if already installed
+  if (isInstalled) {
     return null;
   }
 
   return (
     <>
-      {isIOS ? (
+      {isIOS || !deferredPrompt ? (
         // iOS: Show button that opens guide
         <button
           onClick={() => setShowIOSGuide(true)}
