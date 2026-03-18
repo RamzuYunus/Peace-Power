@@ -14,9 +14,9 @@ export function InstallButton() {
       return;
     }
 
-    // Detect iOS
+    // Detect iOS - safe check without accessing undefined properties
     const ua = navigator.userAgent;
-    const isApple = /iPad|iPhone|iPod/.test(ua) && !window.MSStream;
+    const isApple = /iPad|iPhone|iPod/.test(ua) && !/(windows|win32)/i.test(ua);
     setIsIOS(isApple);
 
     // Listen for beforeinstallprompt (Android)
@@ -25,8 +25,13 @@ export function InstallButton() {
       setDeferredPrompt(e);
     };
 
-    window.addEventListener("beforeinstallprompt", handler);
-    return () => window.removeEventListener("beforeinstallprompt", handler);
+    try {
+      window.addEventListener("beforeinstallprompt", handler);
+      return () => window.removeEventListener("beforeinstallprompt", handler);
+    } catch (err) {
+      console.error("beforeinstallprompt listener error:", err);
+      return () => {};
+    }
   }, []);
 
   const handleInstallAndroid = async () => {
