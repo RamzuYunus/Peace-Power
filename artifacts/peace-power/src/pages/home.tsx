@@ -103,7 +103,7 @@ export default function Home() {
               <CardContent className="p-8 text-center flex flex-col items-center justify-center text-muted-foreground">
                 <Leaf className="w-12 h-12 mb-4 opacity-20" />
                 <p>No scans yet today.</p>
-                <p className="text-sm mt-1">Take 2 minutes to center yourself.</p>
+                <p className="text-sm mt-1">Take 2, 5, or 10 minutes to center yourself.</p>
               </CardContent>
             </Card>
           )}

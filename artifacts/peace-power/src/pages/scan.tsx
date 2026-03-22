@@ -8,14 +8,15 @@ import { Link } from "wouter";
 import { cn } from "@/lib/utils";
 import { useSubmitScan } from "@workspace/api-client-react";
 
-type ScanState = "idle" | "starting" | "scanning" | "processing" | "results" | "error";
-
-const SCAN_DURATION_SEC = 120; // 2 minutes
+type ScanState = "idle" | "select_duration" | "starting" | "scanning" | "processing" | "results" | "error";
+type ScanDuration = 2 | 5 | 10;
 
 export default function Scan() {
   const [state, setState] = useState<ScanState>("idle");
+  const [selectedDuration, setSelectedDuration] = useState<ScanDuration>(2);
+  const [scanDurationSec, setScanDurationSec] = useState(120);
   const [errorMsg, setErrorMsg] = useState("");
-  const [timeLeft, setTimeLeft] = useState(SCAN_DURATION_SEC);
+  const [timeLeft, setTimeLeft] = useState(scanDurationSec);
   const [result, setResult] = useState<ScanResult | null>(null);
   
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -45,9 +46,17 @@ export default function Scan() {
     }
   };
 
+  const startScan = (duration: ScanDuration) => {
+    const seconds = duration * 60;
+    setSelectedDuration(duration);
+    setScanDurationSec(seconds);
+    setTimeLeft(seconds);
+    setState("starting");
+    setTimeout(() => startCamera(), 100);
+  };
+
   const startCamera = async () => {
     try {
-      setState("starting");
       setErrorMsg("");
       rawDataRef.current = [];
       waveBufferRef.current = [];
@@ -82,7 +91,6 @@ export default function Scan() {
       }
 
       setState("scanning");
-      setTimeLeft(SCAN_DURATION_SEC);
       startCaptureLoop();
       
     } catch (err: any) {
@@ -255,14 +263,35 @@ export default function Scan() {
                 </p>
                 <div className="bg-amber-50 dark:bg-amber-950/30 text-amber-800 dark:text-amber-200 p-4 rounded-xl text-sm text-left flex gap-3 items-start border border-amber-200 dark:border-amber-800/50">
                   <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
-                  <p>Hold still and breathe with the pacer for the full 2 minutes for accurate results.</p>
+                  <p>Hold still and breathe with the pacer for the full {selectedDuration} minutes for accurate results.</p>
                 </div>
               </div>
+              
+              <div className="w-full space-y-3">
+                <p className="text-sm font-medium text-muted-foreground">Select scan duration:</p>
+                <div className="grid grid-cols-3 gap-3">
+                  {[2, 5, 10].map((dur) => (
+                    <button
+                      key={dur}
+                      onClick={() => setSelectedDuration(dur as ScanDuration)}
+                      className={cn(
+                        "py-3 px-4 rounded-lg font-bold text-lg transition-all",
+                        selectedDuration === dur
+                          ? "bg-primary text-primary-foreground shadow-lg"
+                          : "bg-muted text-muted-foreground hover:bg-muted/80 border border-border"
+                      )}
+                    >
+                      {dur}m
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               <button 
-                onClick={startCamera}
+                onClick={() => startScan(selectedDuration)}
                 className="w-full bg-primary text-primary-foreground py-4 rounded-xl font-bold text-lg shadow-xl shadow-primary/25 hover:bg-primary/90 transition-all active:scale-95"
               >
-                Start 2-Min Scan
+                Start {selectedDuration}-Min Scan
               </button>
             </motion.div>
           )}
