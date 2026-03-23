@@ -16,7 +16,7 @@ export default function Scan() {
   const [selectedDuration, setSelectedDuration] = useState<ScanDuration>(2);
   const [scanDurationSec, setScanDurationSec] = useState(120);
   const [errorMsg, setErrorMsg] = useState("");
-  const [timeLeft, setTimeLeft] = useState(scanDurationSec);
+  const [timeLeft, setTimeLeft] = useState(120);
   const [result, setResult] = useState<ScanResult | null>(null);
   
   const videoRef = useRef<HTMLVideoElement>(null);
