@@ -1,0 +1,54 @@
+Update the heart coherence app to add a "Deep Stillness" detection mode that recognizes when a user enters a non-oscillatory coherent state (like deep meditation or dhikr-induced stillness).
+
+Currently, the coherence score drops (e.g., to 2.7) when the user's heart rate becomes very low (~50–55 bpm) and HRV waveform becomes very smooth/flat, even though they are in a profound state (inner sound, vibrations, etc.). The standard FFT-based coherence algorithm penalizes this because it expects a strong sine-wave oscillation in the 0.04–0.26 Hz band.
+
+Please implement the following changes:
+
+1. **Add a "Stillness Coherence" Detection Logic**:
+   - After computing HRV metrics (RMSSD, SDNN, mean HR), check if:
+     - `meanHR < 55 bpm` AND
+     - `SDNN < 20 ms` (or a configurable threshold) AND
+     - `RMSSD > 100 ms` (optional, to ensure vagal tone is high)
+   - If all conditions are met, override the coherence score to `10/10` and label the state as `"Deep Stillness"` instead of running the standard FFT spectral power calculation.
+
+2. **Update the Coherence Score Function**:
+   - Modify the existing `calculateCoherenceScore()` function to include this new conditional branch BEFORE the FFT calculation.
+   - Pseudocode:
+     ```javascript
+     if (meanHR < 55 && SDNN < 20 && RMSSD > 100) {
+       return { score: 10, label: "Deep Stillness", mode: "non-oscillatory" };
+     } else {
+       // run existing FFT-based coherence logic
+       return calculateStandardCoherence();
+     }
+     ```
+
+3. **UI Updates**:
+   - When "Deep Stillness" is detected, display a special badge/icon (e.g., a crescent moon 🌙 or a stillness symbol) instead of the usual coherence meter.
+   - Show a message: "Deep Stillness Detected – Your nervous system is in a high-efficiency parasympathetic state. Standard coherence metrics don't apply here."
+   - Log this state separately in the session history with a `"stillness"` tag.
+
+4. **Configurable Thresholds**:
+   - Add constants at the top of the HRV module for easy tuning:
+     ```javascript
+     const STILLNESS_HR_THRESHOLD = 55; // bpm
+     const STILLNESS_SDNN_THRESHOLD = 20; // ms
+     const STILLNESS_RMSSD_MIN = 100; // ms
+     ```
+
+5. **Backward Compatibility**:
+   - Ensure existing sessions without stillness detection continue to work as before.
+   - Add a flag in session data: `isStillnessMode: true/false`.
+
+Files to modify:
+- `src/utils/hrv.js` (or wherever HRV/coherence is calculated)
+- `src/components/CoherenceDisplay.jsx` (for UI badge/message)
+- `src/utils/sessionLogger.js` (to tag stillness sessions)
+
+Test by simulating a PPG signal with:
+- HR: 52 bpm
+- SDNN: 15 ms
+- RMSSD: 150 ms
+It should return score 10 with "Deep Stillness" label.
+
+Do not break existing FFT-based coherence for normal breathing sessions.
