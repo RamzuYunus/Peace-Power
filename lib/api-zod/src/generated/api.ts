@@ -61,6 +61,10 @@ export const SubmitScanBody = zod.object({
   coherenceLevel: zod.string(),
   quality: zod.string(),
   isStillnessMode: zod.boolean().optional().default(false),
+  stillnessLevel: zod.number().int().min(0).max(4).optional().default(0),
+  stillnessLabel: zod.string().optional().default(""),
+  stillnessBadge: zod.string().optional().default(""),
+  rawIbis: zod.array(zod.number()).optional(),
 });
 
 /**
@@ -76,6 +80,9 @@ export const GetMyScansResponseItem = zod.object({
   coherenceLevel: zod.string(),
   quality: zod.string(),
   isStillnessMode: zod.boolean(),
+  stillnessLevel: zod.number(),
+  stillnessLabel: zod.string(),
+  stillnessBadge: zod.string(),
   scannedAt: zod.date(),
   createdAt: zod.date(),
 });

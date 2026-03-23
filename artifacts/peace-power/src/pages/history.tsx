@@ -78,16 +78,27 @@ export default function History() {
                   </div>
                 </div>
 
-                <div className="flex flex-col items-end justify-center">
-                  <span className={cn(
-                    "px-3 py-1 rounded-full text-xs font-bold",
-                    scan.coherenceLevel === "High" ? "bg-primary/10 text-primary border border-primary/20" :
-                    scan.coherenceLevel === "Medium" ? "bg-accent/10 text-accent-foreground border border-accent/20" :
-                    "bg-destructive/10 text-destructive border border-destructive/20"
-                  )}>
-                    {scan.coherenceLevel}
-                  </span>
-                  <span className="text-[10px] text-muted-foreground mt-1 text-right">
+                <div className="flex flex-col items-end justify-center gap-1">
+                  {scan.isStillnessMode && scan.stillnessBadge ? (
+                    <span className="px-3 py-1 rounded-full text-xs font-bold bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800/50">
+                      {scan.stillnessBadge} L{scan.stillnessLevel}
+                    </span>
+                  ) : (
+                    <span className={cn(
+                      "px-3 py-1 rounded-full text-xs font-bold",
+                      scan.coherenceLevel === "High" ? "bg-primary/10 text-primary border border-primary/20" :
+                      scan.coherenceLevel === "Medium" ? "bg-accent/10 text-accent-foreground border border-accent/20" :
+                      "bg-destructive/10 text-destructive border border-destructive/20"
+                    )}>
+                      {scan.coherenceLevel}
+                    </span>
+                  )}
+                  {scan.isStillnessMode && scan.stillnessLabel && (
+                    <span className="text-[9px] text-indigo-500 dark:text-indigo-400 font-medium text-right leading-tight max-w-[90px]">
+                      {scan.stillnessLabel}
+                    </span>
+                  )}
+                  <span className="text-[10px] text-muted-foreground text-right">
                     Quality: {scan.quality}
                   </span>
                 </div>

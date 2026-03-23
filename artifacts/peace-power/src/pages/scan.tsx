@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Layout } from "@/components/layout";
 import { useScans } from "@/hooks/use-scans";
 import { processPpgSignal, type ScanResult } from "@/lib/signal-processing";
-import { Camera, AlertCircle, RefreshCcw, CheckCircle2, HeartPulse, Moon } from "lucide-react";
+import { Camera, AlertCircle, RefreshCcw, CheckCircle2, HeartPulse, Moon, Sun } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "wouter";
 import { cn } from "@/lib/utils";
@@ -227,6 +227,10 @@ export default function Scan() {
           coherenceLevel: res.coherenceLevel,
           quality: res.quality,
           isStillnessMode: res.isStillnessMode,
+          stillnessLevel: res.stillnessLevel,
+          stillnessLabel: res.stillnessLabel,
+          stillnessBadge: res.stillnessBadge,
+          rawIbis: res.rawIbis,
         },
       });
       setState("results");
@@ -385,52 +389,98 @@ export default function Scan() {
               <div className="text-center space-y-2 mt-4">
                 <div className={cn(
                   "inline-flex items-center justify-center p-3 rounded-full mb-2",
-                  result.isStillnessMode
+                  result.isStillnessMode && result.stillnessLevel === 4
+                    ? "bg-amber-100 dark:bg-amber-900/30 text-amber-500"
+                    : result.isStillnessMode && result.stillnessLevel === 3
+                    ? "bg-violet-100 dark:bg-violet-900/30 text-violet-500"
+                    : result.isStillnessMode
                     ? "bg-indigo-100 dark:bg-indigo-900/30 text-indigo-500"
                     : "bg-green-100 dark:bg-green-900/30 text-green-600"
                 )}>
-                  {result.isStillnessMode
+                  {result.isStillnessMode && result.stillnessLevel === 4
+                    ? <Sun className="w-8 h-8" />
+                    : result.isStillnessMode
                     ? <Moon className="w-8 h-8" />
                     : <CheckCircle2 className="w-8 h-8" />
                   }
                 </div>
                 <h2 className="text-3xl font-display font-bold">
-                  {result.isStillnessMode ? "Deep Stillness" : "Scan Complete"}
+                  {result.isStillnessMode
+                    ? (result.stillnessLabel || "Deep Stillness")
+                    : "Scan Complete"}
                 </h2>
                 <p className="text-muted-foreground">
                   Signal Quality: <span className="font-medium text-foreground">{result.quality}</span>
                 </p>
               </div>
 
-              {/* Deep Stillness Special Card */}
+              {/* Deep Stillness Tiered Card */}
               {result.isStillnessMode && (
                 <motion.div
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: 0.15 }}
-                  className="bg-gradient-to-br from-indigo-50 to-violet-50 dark:from-indigo-950/40 dark:to-violet-950/30 border border-indigo-200 dark:border-indigo-800/50 rounded-3xl p-6 shadow-xl shadow-indigo-500/10"
+                  className={cn(
+                    "rounded-3xl p-6 shadow-xl border",
+                    result.stillnessLevel === 4
+                      ? "bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/40 dark:to-orange-950/30 border-amber-300 dark:border-amber-700/50 shadow-amber-500/10"
+                      : result.stillnessLevel === 3
+                      ? "bg-gradient-to-br from-violet-50 to-indigo-50 dark:from-violet-950/40 dark:to-indigo-950/30 border-violet-300 dark:border-violet-700/50 shadow-violet-500/10"
+                      : "bg-gradient-to-br from-indigo-50 to-slate-50 dark:from-indigo-950/40 dark:to-slate-950/30 border-indigo-200 dark:border-indigo-800/50 shadow-indigo-500/10"
+                  )}
                 >
                   <div className="text-center mb-5">
-                    <div className="text-6xl mb-2">🌙</div>
-                    <p className="text-sm text-indigo-500 dark:text-indigo-400 font-medium uppercase tracking-wider mb-1">State Detected</p>
-                    <p className="text-2xl font-display font-bold text-indigo-700 dark:text-indigo-300">Non-Oscillatory Coherence</p>
+                    <div className="text-6xl mb-2">{result.stillnessBadge}</div>
+                    <p className={cn(
+                      "text-xs font-bold uppercase tracking-widest mb-1",
+                      result.stillnessLevel === 4 ? "text-amber-500" :
+                      result.stillnessLevel === 3 ? "text-violet-500" : "text-indigo-500"
+                    )}>
+                      Level {result.stillnessLevel} — Non-Oscillatory Coherence
+                    </p>
+                    <p className={cn(
+                      "text-2xl font-display font-bold",
+                      result.stillnessLevel === 4 ? "text-amber-700 dark:text-amber-300" :
+                      result.stillnessLevel === 3 ? "text-violet-700 dark:text-violet-300" : "text-indigo-700 dark:text-indigo-300"
+                    )}>
+                      {result.stillnessLabel}
+                    </p>
                   </div>
-                  <p className="text-sm text-indigo-700/80 dark:text-indigo-300/80 text-center leading-relaxed mb-5">
-                    Your nervous system is in a high-efficiency parasympathetic state. Standard coherence metrics don't apply — your heart has entered profound stillness.
+                  <p className={cn(
+                    "text-sm text-center leading-relaxed mb-5",
+                    result.stillnessLevel === 4 ? "text-amber-700/80 dark:text-amber-300/80" :
+                    result.stillnessLevel === 3 ? "text-violet-700/80 dark:text-violet-300/80" : "text-indigo-700/80 dark:text-indigo-300/80"
+                  )}>
+                    {result.stillnessLevel === 4 && "Complete dissolution — the heart is fully absorbed in the Divine Presence."}
+                    {result.stillnessLevel === 3 && "The heart mirror is cleansed — reflecting light without oscillation."}
+                    {result.stillnessLevel === 2 && "Deep tranquility — nervous system in profound parasympathetic stillness."}
+                    {result.stillnessLevel === 1 && "Inner calm — a non-oscillatory coherent state beyond standard metrics."}
                   </p>
-                  <div className="grid grid-cols-3 gap-3 border-t border-indigo-200 dark:border-indigo-800/50 pt-5">
-                    <div className="text-center">
-                      <p className="text-xs text-indigo-400 mb-1">Score</p>
-                      <p className="text-xl font-bold text-indigo-600 dark:text-indigo-300">10.0</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-xs text-indigo-400 mb-1">Heart Rate</p>
-                      <p className="text-xl font-bold text-indigo-600 dark:text-indigo-300">{result.heartRate} <span className="text-xs font-normal">bpm</span></p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-xs text-indigo-400 mb-1">RMSSD</p>
-                      <p className="text-xl font-bold text-indigo-600 dark:text-indigo-300">{result.rmssd} <span className="text-xs font-normal">ms</span></p>
-                    </div>
+                  <div className={cn(
+                    "grid grid-cols-3 gap-3 border-t pt-5",
+                    result.stillnessLevel === 4 ? "border-amber-200 dark:border-amber-800/50" :
+                    result.stillnessLevel === 3 ? "border-violet-200 dark:border-violet-800/50" : "border-indigo-200 dark:border-indigo-800/50"
+                  )}>
+                    {[
+                      { label: "Score", value: "10.0" },
+                      { label: "Heart Rate", value: `${result.heartRate}`, unit: "bpm" },
+                      { label: "RMSSD", value: `${result.rmssd}`, unit: "ms" },
+                    ].map(m => (
+                      <div key={m.label} className="text-center">
+                        <p className={cn(
+                          "text-xs mb-1",
+                          result.stillnessLevel === 4 ? "text-amber-400" :
+                          result.stillnessLevel === 3 ? "text-violet-400" : "text-indigo-400"
+                        )}>{m.label}</p>
+                        <p className={cn(
+                          "text-xl font-bold",
+                          result.stillnessLevel === 4 ? "text-amber-600 dark:text-amber-300" :
+                          result.stillnessLevel === 3 ? "text-violet-600 dark:text-violet-300" : "text-indigo-600 dark:text-indigo-300"
+                        )}>
+                          {m.value} {m.unit && <span className="text-xs font-normal">{m.unit}</span>}
+                        </p>
+                      </div>
+                    ))}
                   </div>
                 </motion.div>
               )}

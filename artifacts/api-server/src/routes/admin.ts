@@ -162,8 +162,8 @@ router.post("/admin/members/:userId/set-admin", requireAdmin, async (req, res): 
 // Manually re-run the Deep Stillness re-classification across all members.
 // Useful when thresholds are tuned after deployment.
 router.post("/admin/reclassify-stillness", requireAdmin, async (_req, res): Promise<void> => {
-  await retroactivelyClassifyStillnessScans();
-  res.json({ ok: true, message: "Re-classification complete. Check server logs for details." });
+  const result = await retroactivelyClassifyStillnessScans();
+  res.json({ ok: true, total: result.total, updated: result.updated, unchanged: result.unchanged });
 });
 
 export default router;

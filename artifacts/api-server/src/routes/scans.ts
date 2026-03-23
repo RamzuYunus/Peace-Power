@@ -19,7 +19,10 @@ router.post("/scans", async (req, res): Promise<void> => {
     return;
   }
 
-  const { heartRate, rmssd, sdnn, coherenceScore, coherenceLevel, quality, isStillnessMode } = parsed.data;
+  const {
+    heartRate, rmssd, sdnn, coherenceScore, coherenceLevel, quality,
+    isStillnessMode, stillnessLevel, stillnessLabel, stillnessBadge, rawIbis,
+  } = parsed.data;
 
   const [scan] = await db
     .insert(scansTable)
@@ -32,6 +35,10 @@ router.post("/scans", async (req, res): Promise<void> => {
       coherenceLevel,
       quality,
       isStillnessMode: isStillnessMode ?? false,
+      stillnessLevel: stillnessLevel ?? 0,
+      stillnessLabel: stillnessLabel ?? "",
+      stillnessBadge: stillnessBadge ?? "",
+      rawIbis: rawIbis ?? null,
     })
     .returning();
 

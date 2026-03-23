@@ -10,7 +10,7 @@ import {
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { Heart, Users, Activity, Wind, ArrowLeft, ChevronDown, ChevronUp, Shield, ShieldOff, LogOut } from "lucide-react";
+import { Heart, Users, Activity, Wind, ArrowLeft, ChevronDown, ChevronUp, Shield, ShieldOff, LogOut, RefreshCw, CheckCircle2, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function Admin() {
@@ -20,6 +20,22 @@ export default function Admin() {
 
   const [expandedUser, setExpandedUser] = useState<number | null>(null);
   const [confirmLogout, setConfirmLogout] = useState(false);
+  const [reclassifyStatus, setReclassifyStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
+  const [reclassifyResult, setReclassifyResult] = useState<{ total: number; updated: number; unchanged: number } | null>(null);
+
+  const handleReclassify = async () => {
+    setReclassifyStatus("loading");
+    setReclassifyResult(null);
+    try {
+      const res = await fetch("/api/admin/reclassify-stillness", { method: "POST", credentials: "include" });
+      if (!res.ok) throw new Error("Server error");
+      const data = await res.json();
+      setReclassifyResult(data);
+      setReclassifyStatus("done");
+    } catch {
+      setReclassifyStatus("error");
+    }
+  };
 
   const { data: members, isLoading: membersLoading } = useGetAdminMembers({
     query: { enabled: isAdmin },
@@ -147,6 +163,44 @@ export default function Admin() {
             </div>
           </div>
         )}
+
+        {/* Admin Tools */}
+        <div className="bg-card border border-border/60 rounded-2xl p-6 shadow-sm space-y-4">
+          <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider">Admin Tools</h3>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+            <button
+              onClick={handleReclassify}
+              disabled={reclassifyStatus === "loading"}
+              className={cn(
+                "flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors border",
+                reclassifyStatus === "loading"
+                  ? "opacity-50 cursor-not-allowed bg-muted border-border text-muted-foreground"
+                  : "bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/30 dark:hover:bg-indigo-950/50 border-indigo-200 dark:border-indigo-800/50 text-indigo-700 dark:text-indigo-300"
+              )}
+            >
+              <RefreshCw className={cn("w-4 h-4", reclassifyStatus === "loading" && "animate-spin")} />
+              {reclassifyStatus === "loading" ? "Reclassifying..." : "Recalculate All Sessions"}
+            </button>
+            {reclassifyStatus === "done" && reclassifyResult && (
+              <div className="flex items-center gap-2 text-sm text-green-700 dark:text-green-400">
+                <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
+                <span>
+                  Done — {reclassifyResult.total} scans checked, <strong>{reclassifyResult.updated}</strong> updated,{" "}
+                  {reclassifyResult.unchanged} unchanged.
+                </span>
+              </div>
+            )}
+            {reclassifyStatus === "error" && (
+              <div className="flex items-center gap-2 text-sm text-destructive">
+                <AlertCircle className="w-4 h-4" />
+                <span>Reclassification failed. Check server logs.</span>
+              </div>
+            )}
+          </div>
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            Re-runs the tiered Deep Stillness detection (Sakīnah I–II, Qalb Polished, Fanā' Union) over all stored scans. Uses raw IBI data where available for precise recalculation; falls back to stored HR/SDNN/RMSSD.
+          </p>
+        </div>
 
         {/* Members Table */}
         <div className="space-y-3">

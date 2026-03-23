@@ -1,67 +1,119 @@
 /**
- * Retroactive Deep Stillness Re-Classification
+ * Retroactive Deep Stillness Re-Classification (4-Level Tiered)
  *
- * Finds any scan records where the physiological data meets the Deep Stillness
- * thresholds but was classified before this feature existed (or with isStillnessMode = false).
- * Updates those records so historical results correctly reflect the user's state.
+ * Scans all existing records and re-classifies any that meet the tiered
+ * stillness thresholds using the saved HR, SDNN, and RMSSD values.
  *
- * Safe to run on every startup — uses a WHERE clause that only touches records
- * that need changing, and is a no-op when there are none.
+ * If raw IBI data is available, uses it for a more precise re-calculation.
+ * Safe to run on every startup — only updates records that need changing.
  */
 
 import { db, scansTable } from "@workspace/db";
-import { and, lt, gt, eq, or, isNull } from "drizzle-orm";
+import { eq } from "drizzle-orm";
+import { reclassifyFromMetrics, detectStillnessLevel } from "./stillness-thresholds";
 
-// These must stay in sync with signal-processing.ts on the frontend
-const STILLNESS_HR_THRESHOLD = 55;  // bpm  (strictly less than)
-const STILLNESS_SDNN_MAX     = 20;  // ms   (strictly less than)
-const STILLNESS_RMSSD_MIN    = 100; // ms   (strictly greater than)
+export { reclassifyFromMetrics } from "./stillness-thresholds";
 
-export async function retroactivelyClassifyStillnessScans() {
+export async function retroactivelyClassifyStillnessScans(): Promise<{
+  total: number;
+  updated: number;
+  unchanged: number;
+  details: string[];
+}> {
+  const result = { total: 0, updated: 0, unchanged: 0, details: [] as string[] };
+
   try {
-    // Find scans that physiologically qualify as Deep Stillness
-    // but have not been marked as such yet.
-    const qualifying = await db
-      .select({ id: scansTable.id })
-      .from(scansTable)
-      .where(
-        and(
-          lt(scansTable.heartRate, STILLNESS_HR_THRESHOLD),
-          lt(scansTable.sdnn, STILLNESS_SDNN_MAX),
-          gt(scansTable.rmssd, STILLNESS_RMSSD_MIN),
-          // Only touch records not already classified
-          or(
-            eq(scansTable.isStillnessMode, false),
-            isNull(scansTable.isStillnessMode)
-          )
-        )
-      );
+    const allScans = await db.select().from(scansTable);
+    result.total = allScans.length;
 
-    if (qualifying.length === 0) {
-      console.log("[stillness-migration] No scans require re-classification.");
-      return;
-    }
+    for (const scan of allScans) {
+      let newClassification: ReturnType<typeof reclassifyFromMetrics>;
 
-    const ids = qualifying.map(r => r.id);
-    console.log(`[stillness-migration] Re-classifying ${ids.length} scan(s) as Deep Stillness: ids ${ids.join(", ")}`);
+      // Use raw IBIs if available (precise), otherwise fall back to stored metrics
+      const rawIbis = scan.rawIbis as number[] | null;
+      if (rawIbis && rawIbis.length >= 5) {
+        const meanIbi = rawIbis.reduce((a: number, b: number) => a + b, 0) / rawIbis.length;
+        const heartRate = Math.round(60000 / meanIbi);
 
-    // Update each qualifying scan in bulk
-    await Promise.all(
-      ids.map(id =>
-        db
-          .update(scansTable)
-          .set({
+        let sumSqDiff = 0;
+        for (let i = 1; i < rawIbis.length; i++) {
+          const diff = rawIbis[i] - rawIbis[i - 1];
+          sumSqDiff += diff * diff;
+        }
+        const rmssdPrecise = Math.sqrt(sumSqDiff / (rawIbis.length - 1));
+
+        let sumSqDev = 0;
+        for (let i = 0; i < rawIbis.length; i++) {
+          const dev = rawIbis[i] - meanIbi;
+          sumSqDev += dev * dev;
+        }
+        const sdnnPrecise = Math.sqrt(sumSqDev / rawIbis.length);
+
+        const match = detectStillnessLevel(heartRate, sdnnPrecise, rmssdPrecise, false);
+        if (match) {
+          newClassification = {
+            isStillnessMode: true,
+            stillnessLevel: match.level,
+            stillnessLabel: match.label,
+            stillnessBadge: match.badge,
             coherenceScore: 10,
             coherenceLevel: "Deep Stillness",
-            isStillnessMode: true,
-          })
-          .where(eq(scansTable.id, id))
-      )
-    );
+          };
+        } else {
+          newClassification = {
+            isStillnessMode: false,
+            stillnessLevel: 0,
+            stillnessLabel: "",
+            stillnessBadge: "",
+            coherenceScore: -1,
+            coherenceLevel: "",
+          };
+        }
+      } else {
+        newClassification = reclassifyFromMetrics(scan.heartRate, scan.sdnn, scan.rmssd);
+      }
 
-    console.log(`[stillness-migration] Done — ${ids.length} scan(s) updated.`);
+      // Check if anything changed
+      const needsUpdate =
+        newClassification.isStillnessMode !== scan.isStillnessMode ||
+        newClassification.stillnessLevel !== scan.stillnessLevel ||
+        newClassification.stillnessLabel !== (scan.stillnessLabel ?? "") ||
+        newClassification.stillnessBadge !== (scan.stillnessBadge ?? "");
+
+      if (!needsUpdate) {
+        result.unchanged++;
+        continue;
+      }
+
+      const updateValues: Record<string, unknown> = {
+        isStillnessMode: newClassification.isStillnessMode,
+        stillnessLevel: newClassification.stillnessLevel,
+        stillnessLabel: newClassification.stillnessLabel,
+        stillnessBadge: newClassification.stillnessBadge,
+      };
+      if (newClassification.coherenceScore !== -1) {
+        updateValues.coherenceScore = newClassification.coherenceScore;
+        updateValues.coherenceLevel = newClassification.coherenceLevel;
+      }
+
+      await db.update(scansTable).set(updateValues).where(eq(scansTable.id, scan.id));
+      result.updated++;
+
+      const label = newClassification.isStillnessMode
+        ? `→ ${newClassification.stillnessBadge} Level ${newClassification.stillnessLevel} (${newClassification.stillnessLabel})`
+        : "→ standard (no stillness)";
+      result.details.push(`Scan #${scan.id} [HR ${scan.heartRate}, SDNN ${scan.sdnn}, RMSSD ${scan.rmssd}] ${label}`);
+    }
+
+    if (result.updated === 0) {
+      console.log(`[stillness-migration] No scans require re-classification. (${result.total} checked)`);
+    } else {
+      console.log(`[stillness-migration] Updated ${result.updated}/${result.total} scan(s):`);
+      result.details.forEach(d => console.log(`  ${d}`));
+    }
   } catch (err) {
-    // Never crash the server over a migration error
     console.error("[stillness-migration] Error during re-classification:", err);
   }
+
+  return result;
 }
