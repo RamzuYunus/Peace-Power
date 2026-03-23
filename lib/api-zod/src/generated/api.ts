@@ -53,6 +53,9 @@ export const GetMeResponse = zod.object({
 /**
  * @summary Submit a scan result
  */
+export const submitScanBodyStillnessLevelMin = 0;
+export const submitScanBodyStillnessLevelMax = 4;
+
 export const SubmitScanBody = zod.object({
   heartRate: zod.number(),
   rmssd: zod.number(),
@@ -60,10 +63,14 @@ export const SubmitScanBody = zod.object({
   coherenceScore: zod.number(),
   coherenceLevel: zod.string(),
   quality: zod.string(),
-  isStillnessMode: zod.boolean().optional().default(false),
-  stillnessLevel: zod.number().int().min(0).max(4).optional().default(0),
-  stillnessLabel: zod.string().optional().default(""),
-  stillnessBadge: zod.string().optional().default(""),
+  isStillnessMode: zod.boolean().optional(),
+  stillnessLevel: zod
+    .number()
+    .min(submitScanBodyStillnessLevelMin)
+    .max(submitScanBodyStillnessLevelMax)
+    .optional(),
+  stillnessLabel: zod.string().optional(),
+  stillnessBadge: zod.string().optional(),
   rawIbis: zod.array(zod.number()).optional(),
 });
 
@@ -79,10 +86,10 @@ export const GetMyScansResponseItem = zod.object({
   coherenceScore: zod.number(),
   coherenceLevel: zod.string(),
   quality: zod.string(),
-  isStillnessMode: zod.boolean(),
-  stillnessLevel: zod.number(),
-  stillnessLabel: zod.string(),
-  stillnessBadge: zod.string(),
+  isStillnessMode: zod.boolean().optional(),
+  stillnessLevel: zod.number().optional(),
+  stillnessLabel: zod.string().optional(),
+  stillnessBadge: zod.string().optional(),
   scannedAt: zod.date(),
   createdAt: zod.date(),
 });
@@ -108,6 +115,10 @@ export const GetAdminMembersResponseItem = zod.object({
       coherenceScore: zod.number(),
       coherenceLevel: zod.string(),
       quality: zod.string(),
+      isStillnessMode: zod.boolean().optional(),
+      stillnessLevel: zod.number().optional(),
+      stillnessLabel: zod.string().optional(),
+      stillnessBadge: zod.string().optional(),
       scannedAt: zod.date(),
       createdAt: zod.date(),
     }),
@@ -134,6 +145,10 @@ export const GetAdminMemberScansResponseItem = zod.object({
   coherenceScore: zod.number(),
   coherenceLevel: zod.string(),
   quality: zod.string(),
+  isStillnessMode: zod.boolean().optional(),
+  stillnessLevel: zod.number().optional(),
+  stillnessLabel: zod.string().optional(),
+  stillnessBadge: zod.string().optional(),
   scannedAt: zod.date(),
   createdAt: zod.date(),
 });

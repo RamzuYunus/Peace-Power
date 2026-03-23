@@ -360,6 +360,20 @@ components:
           type: string
         quality:
           type: string
+        isStillnessMode:
+          type: boolean
+        stillnessLevel:
+          type: integer
+          minimum: 0
+          maximum: 4
+        stillnessLabel:
+          type: string
+        stillnessBadge:
+          type: string
+        rawIbis:
+          type: array
+          items:
+            type: number
       required:
         - heartRate
         - rmssd
@@ -386,6 +400,14 @@ components:
         coherenceLevel:
           type: string
         quality:
+          type: string
+        isStillnessMode:
+          type: boolean
+        stillnessLevel:
+          type: integer
+        stillnessLabel:
+          type: string
+        stillnessBadge:
           type: string
         scannedAt:
           type: string

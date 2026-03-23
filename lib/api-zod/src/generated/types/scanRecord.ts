@@ -15,6 +15,10 @@ export interface ScanRecord {
   coherenceScore: number;
   coherenceLevel: string;
   quality: string;
+  isStillnessMode?: boolean;
+  stillnessLevel?: number;
+  stillnessLabel?: string;
+  stillnessBadge?: string;
   scannedAt: Date;
   createdAt: Date;
 }

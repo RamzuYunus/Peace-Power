@@ -39,6 +39,15 @@ export interface SubmitScanBody {
   coherenceScore: number;
   coherenceLevel: string;
   quality: string;
+  isStillnessMode?: boolean;
+  /**
+   * @minimum 0
+   * @maximum 4
+   */
+  stillnessLevel?: number;
+  stillnessLabel?: string;
+  stillnessBadge?: string;
+  rawIbis?: number[];
 }
 
 export interface ScanRecord {
@@ -50,6 +59,10 @@ export interface ScanRecord {
   coherenceScore: number;
   coherenceLevel: string;
   quality: string;
+  isStillnessMode?: boolean;
+  stillnessLevel?: number;
+  stillnessLabel?: string;
+  stillnessBadge?: string;
   scannedAt: string;
   createdAt: string;
 }

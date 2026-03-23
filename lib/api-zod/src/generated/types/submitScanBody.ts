@@ -13,4 +13,13 @@ export interface SubmitScanBody {
   coherenceScore: number;
   coherenceLevel: string;
   quality: string;
+  isStillnessMode?: boolean;
+  /**
+   * @minimum 0
+   * @maximum 4
+   */
+  stillnessLevel?: number;
+  stillnessLabel?: string;
+  stillnessBadge?: string;
+  rawIbis?: number[];
 }
