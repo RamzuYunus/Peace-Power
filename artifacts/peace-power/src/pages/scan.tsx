@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Layout } from "@/components/layout";
 import { useScans } from "@/hooks/use-scans";
 import { processPpgSignal, type ScanResult } from "@/lib/signal-processing";
-import { Camera, AlertCircle, RefreshCcw, CheckCircle2, HeartPulse } from "lucide-react";
+import { Camera, AlertCircle, RefreshCcw, CheckCircle2, HeartPulse, Moon } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "wouter";
 import { cn } from "@/lib/utils";
@@ -226,6 +226,7 @@ export default function Scan() {
           coherenceScore: res.coherenceScore,
           coherenceLevel: res.coherenceLevel,
           quality: res.quality,
+          isStillnessMode: res.isStillnessMode,
         },
       });
       setState("results");
@@ -382,40 +383,88 @@ export default function Scan() {
               className="flex flex-col space-y-6"
             >
               <div className="text-center space-y-2 mt-4">
-                <div className="inline-flex items-center justify-center p-3 bg-green-100 dark:bg-green-900/30 text-green-600 rounded-full mb-2">
-                  <CheckCircle2 className="w-8 h-8" />
+                <div className={cn(
+                  "inline-flex items-center justify-center p-3 rounded-full mb-2",
+                  result.isStillnessMode
+                    ? "bg-indigo-100 dark:bg-indigo-900/30 text-indigo-500"
+                    : "bg-green-100 dark:bg-green-900/30 text-green-600"
+                )}>
+                  {result.isStillnessMode
+                    ? <Moon className="w-8 h-8" />
+                    : <CheckCircle2 className="w-8 h-8" />
+                  }
                 </div>
-                <h2 className="text-3xl font-display font-bold">Scan Complete</h2>
-                <p className="text-muted-foreground">Signal Quality: <span className="font-medium text-foreground">{result.quality}</span></p>
+                <h2 className="text-3xl font-display font-bold">
+                  {result.isStillnessMode ? "Deep Stillness" : "Scan Complete"}
+                </h2>
+                <p className="text-muted-foreground">
+                  Signal Quality: <span className="font-medium text-foreground">{result.quality}</span>
+                </p>
               </div>
 
-              <div className="bg-card border border-border/50 rounded-3xl p-6 shadow-xl shadow-black/5">
-                <div className="text-center mb-6">
-                  <p className="text-sm text-muted-foreground font-medium uppercase tracking-wider mb-2">Coherence Score</p>
-                  <div className="text-6xl font-display font-bold bg-gradient-to-br from-primary to-accent bg-clip-text text-transparent">
-                    {result.coherenceScore.toFixed(1)}
+              {/* Deep Stillness Special Card */}
+              {result.isStillnessMode && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.15 }}
+                  className="bg-gradient-to-br from-indigo-50 to-violet-50 dark:from-indigo-950/40 dark:to-violet-950/30 border border-indigo-200 dark:border-indigo-800/50 rounded-3xl p-6 shadow-xl shadow-indigo-500/10"
+                >
+                  <div className="text-center mb-5">
+                    <div className="text-6xl mb-2">🌙</div>
+                    <p className="text-sm text-indigo-500 dark:text-indigo-400 font-medium uppercase tracking-wider mb-1">State Detected</p>
+                    <p className="text-2xl font-display font-bold text-indigo-700 dark:text-indigo-300">Non-Oscillatory Coherence</p>
                   </div>
-                  <div className={cn(
-                    "inline-flex px-3 py-1 rounded-full text-sm font-bold mt-3",
-                    result.coherenceLevel === "High" ? "bg-primary/20 text-primary" :
-                    result.coherenceLevel === "Medium" ? "bg-accent/20 text-accent-foreground" :
-                    "bg-destructive/20 text-destructive"
-                  )}>
-                    {result.coherenceLevel} State
+                  <p className="text-sm text-indigo-700/80 dark:text-indigo-300/80 text-center leading-relaxed mb-5">
+                    Your nervous system is in a high-efficiency parasympathetic state. Standard coherence metrics don't apply — your heart has entered profound stillness.
+                  </p>
+                  <div className="grid grid-cols-3 gap-3 border-t border-indigo-200 dark:border-indigo-800/50 pt-5">
+                    <div className="text-center">
+                      <p className="text-xs text-indigo-400 mb-1">Score</p>
+                      <p className="text-xl font-bold text-indigo-600 dark:text-indigo-300">10.0</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-xs text-indigo-400 mb-1">Heart Rate</p>
+                      <p className="text-xl font-bold text-indigo-600 dark:text-indigo-300">{result.heartRate} <span className="text-xs font-normal">bpm</span></p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-xs text-indigo-400 mb-1">RMSSD</p>
+                      <p className="text-xl font-bold text-indigo-600 dark:text-indigo-300">{result.rmssd} <span className="text-xs font-normal">ms</span></p>
+                    </div>
                   </div>
-                </div>
+                </motion.div>
+              )}
 
-                <div className="grid grid-cols-2 gap-4 border-t border-border/50 pt-6">
-                  <div>
-                    <p className="text-xs text-muted-foreground mb-1">Heart Rate</p>
-                    <p className="text-2xl font-semibold">{result.heartRate} <span className="text-sm font-normal text-muted-foreground">bpm</span></p>
+              {/* Standard Coherence Card */}
+              {!result.isStillnessMode && (
+                <div className="bg-card border border-border/50 rounded-3xl p-6 shadow-xl shadow-black/5">
+                  <div className="text-center mb-6">
+                    <p className="text-sm text-muted-foreground font-medium uppercase tracking-wider mb-2">Coherence Score</p>
+                    <div className="text-6xl font-display font-bold bg-gradient-to-br from-primary to-accent bg-clip-text text-transparent">
+                      {result.coherenceScore.toFixed(1)}
+                    </div>
+                    <div className={cn(
+                      "inline-flex px-3 py-1 rounded-full text-sm font-bold mt-3",
+                      result.coherenceLevel === "High" ? "bg-primary/20 text-primary" :
+                      result.coherenceLevel === "Medium" ? "bg-accent/20 text-accent-foreground" :
+                      "bg-destructive/20 text-destructive"
+                    )}>
+                      {result.coherenceLevel} State
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground mb-1">HRV (RMSSD)</p>
-                    <p className="text-2xl font-semibold">{result.rmssd} <span className="text-sm font-normal text-muted-foreground">ms</span></p>
+
+                  <div className="grid grid-cols-2 gap-4 border-t border-border/50 pt-6">
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-1">Heart Rate</p>
+                      <p className="text-2xl font-semibold">{result.heartRate} <span className="text-sm font-normal text-muted-foreground">bpm</span></p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-1">HRV (RMSSD)</p>
+                      <p className="text-2xl font-semibold">{result.rmssd} <span className="text-sm font-normal text-muted-foreground">ms</span></p>
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
 
               <div className="grid grid-cols-2 gap-3 pt-4">
                 <button 

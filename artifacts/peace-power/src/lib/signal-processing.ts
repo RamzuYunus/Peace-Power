@@ -3,6 +3,11 @@
  * Pure JavaScript implementation with no external math dependencies.
  */
 
+// ── Deep Stillness Detection Thresholds ─────────────────────────────────────
+export const STILLNESS_HR_THRESHOLD  = 55;   // bpm  – max HR for stillness
+export const STILLNESS_SDNN_MAX      = 20;   // ms   – max SDNN (very stable IBI)
+export const STILLNESS_RMSSD_MIN     = 100;  // ms   – min RMSSD (high vagal tone)
+
 export interface ScanResult {
   timestamp: number;
   durationSeconds: number;
@@ -10,9 +15,10 @@ export interface ScanResult {
   rmssd: number;
   sdnn: number;
   coherenceScore: number;
-  coherenceLevel: "Low" | "Medium" | "High";
+  coherenceLevel: "Low" | "Medium" | "High" | "Deep Stillness";
   validPeaks: number;
   quality: "Poor" | "Fair" | "Good" | "Excellent";
+  isStillnessMode: boolean;
 }
 
 // 1. In-place Radix-2 FFT
@@ -140,7 +146,8 @@ export function processPpgSignal(timestampsMs: number[], values: number[]): Scan
       timestamp: Date.now(),
       durationSeconds: durationSec,
       heartRate: 0, rmssd: 0, sdnn: 0, coherenceScore: 0,
-      coherenceLevel: "Low", validPeaks: validPeakCount, quality: "Poor"
+      coherenceLevel: "Low", validPeaks: validPeakCount, quality: "Poor",
+      isStillnessMode: false
     };
   }
 
@@ -162,7 +169,39 @@ export function processPpgSignal(timestampsMs: number[], values: number[]): Scan
   }
   const sdnn = Math.round(Math.sqrt(sumSqDev / ibis.length));
 
-  // F. Frequency-Domain (Coherence via FFT)
+  // Quality heuristic
+  let quality: "Poor" | "Fair" | "Good" | "Excellent" = "Good";
+  const expectedPeaks = (durationSec / 60) * heartRate;
+  if (validPeakCount < expectedPeaks * 0.6) quality = "Poor";
+  else if (validPeakCount < expectedPeaks * 0.8) quality = "Fair";
+  else if (sdnn > 150 || rmssd > 150) quality = "Fair"; // likely noisy
+  else if (validPeakCount > expectedPeaks * 0.95) quality = "Excellent";
+
+  // ── F. Deep Stillness Detection ─────────────────────────────────────────
+  // Check BEFORE FFT: a very low, stable HR with high vagal tone indicates
+  // a non-oscillatory parasympathetic state (deep meditation / dhikr).
+  // The standard FFT coherence algorithm gives a low score here because there
+  // is no strong sine-wave oscillation – but the state is actually profound.
+  if (
+    heartRate < STILLNESS_HR_THRESHOLD &&
+    sdnn < STILLNESS_SDNN_MAX &&
+    rmssd > STILLNESS_RMSSD_MIN
+  ) {
+    return {
+      timestamp: Date.now(),
+      durationSeconds: durationSec,
+      heartRate,
+      rmssd,
+      sdnn,
+      coherenceScore: 10,
+      coherenceLevel: "Deep Stillness",
+      validPeaks: validPeakCount,
+      quality,
+      isStillnessMode: true,
+    };
+  }
+
+  // G. Frequency-Domain (Coherence via FFT)
   // 1. Resample IBIs to an evenly spaced time series at 4Hz (0.25s)
   const sampleRateHz = 4;
   const sampleIntervalMs = 1000 / sampleRateHz;
@@ -183,9 +222,8 @@ export function processPpgSignal(timestampsMs: number[], values: number[]): Scan
     if (!p2) {
       resampledIbis[i] = ibis[ibis.length - 1] || meanIbi;
     } else {
-      const progress = (currentTime - p1.time) / (p2.time - p1.time);
-      const currentIbi = p2.time - p1.time; // Or actual stored IBI
-      resampledIbis[i] = currentIbi; // simplified zero-order hold
+      const currentIbi = p2.time - p1.time;
+      resampledIbis[i] = currentIbi;
     }
     
     // Apply Hann window
@@ -226,22 +264,12 @@ export function processPpgSignal(timestampsMs: number[], values: number[]): Scan
   // Simplified ratio (0 to 1)
   let coherenceRaw = totalLfPower > 0 ? (peakLfPower / totalLfPower) : 0;
   
-  // Scale to make it look like a 0-10 score (HeartMath uses arbitrary units, we will use a 0-10 scale)
-  // Usually, a peak taking up 30%+ of the LF band is considered highly coherent.
   let coherenceScore = Math.min(10, Math.round(coherenceRaw * 2.5 * 10 * 10) / 10);
   if (isNaN(coherenceScore)) coherenceScore = 0;
 
   let coherenceLevel: "Low" | "Medium" | "High" = "Low";
   if (coherenceScore >= 4.0) coherenceLevel = "High";
   else if (coherenceScore >= 1.5) coherenceLevel = "Medium";
-
-  // Quality heuristic
-  let quality: "Poor" | "Fair" | "Good" | "Excellent" = "Good";
-  const expectedPeaks = (durationSec / 60) * heartRate;
-  if (validPeakCount < expectedPeaks * 0.6) quality = "Poor";
-  else if (validPeakCount < expectedPeaks * 0.8) quality = "Fair";
-  else if (sdnn > 150 || rmssd > 150) quality = "Fair"; // likely noisy
-  else if (validPeakCount > expectedPeaks * 0.95) quality = "Excellent";
 
   return {
     timestamp: Date.now(),
@@ -252,6 +280,7 @@ export function processPpgSignal(timestampsMs: number[], values: number[]): Scan
     coherenceScore,
     coherenceLevel,
     validPeaks: validPeakCount,
-    quality
+    quality,
+    isStillnessMode: false,
   };
 }

@@ -60,6 +60,7 @@ export const SubmitScanBody = zod.object({
   coherenceScore: zod.number(),
   coherenceLevel: zod.string(),
   quality: zod.string(),
+  isStillnessMode: zod.boolean().optional().default(false),
 });
 
 /**
@@ -74,6 +75,7 @@ export const GetMyScansResponseItem = zod.object({
   coherenceScore: zod.number(),
   coherenceLevel: zod.string(),
   quality: zod.string(),
+  isStillnessMode: zod.boolean(),
   scannedAt: zod.date(),
   createdAt: zod.date(),
 });
