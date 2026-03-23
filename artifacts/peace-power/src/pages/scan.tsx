@@ -2,11 +2,13 @@ import { useState, useEffect, useRef } from "react";
 import { Layout } from "@/components/layout";
 import { useScans } from "@/hooks/use-scans";
 import { processPpgSignal, type ScanResult } from "@/lib/signal-processing";
-import { Camera, AlertCircle, RefreshCcw, CheckCircle2, HeartPulse, Moon, Sun } from "lucide-react";
+import { Camera, AlertCircle, RefreshCcw, CheckCircle2, HeartPulse, Moon, Sun, Wifi } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "wouter";
 import { cn } from "@/lib/utils";
 import { useSubmitScan } from "@workspace/api-client-react";
+import { useOffline } from "@/hooks/use-offline";
+import { savePendingScan } from "@/lib/offline-db";
 
 type ScanState = "idle" | "select_duration" | "starting" | "scanning" | "processing" | "results" | "error";
 type ScanDuration = 2 | 5 | 10;
@@ -30,6 +32,8 @@ export default function Scan() {
   
   const { addScan } = useScans();
   const submitScanMutation = useSubmitScan();
+  const { isOnline } = useOffline();
+  const [offlineMsg, setOfflineMsg] = useState("");
 
   // Breathing pacer state (5s inhale, 5s exhale)
   const [breathPhase, setBreathPhase] = useState<"inhale" | "exhale">("inhale");
@@ -217,22 +221,37 @@ export default function Scan() {
       const res = processPpgSignal(times, vals);
       setResult(res);
       addScan(res);
-      // Also sync to backend (non-blocking)
-      submitScanMutation.mutate({
-        data: {
-          heartRate: res.heartRate,
-          rmssd: res.rmssd,
-          sdnn: res.sdnn,
-          coherenceScore: res.coherenceScore,
-          coherenceLevel: res.coherenceLevel,
-          quality: res.quality,
-          isStillnessMode: res.isStillnessMode,
-          stillnessLevel: res.stillnessLevel,
-          stillnessLabel: res.stillnessLabel,
-          stillnessBadge: res.stillnessBadge,
-          rawIbis: res.rawIbis,
-        },
-      });
+      
+      // Try to sync to backend
+      if (navigator.onLine) {
+        submitScanMutation.mutate({
+          data: {
+            heartRate: res.heartRate,
+            rmssd: res.rmssd,
+            sdnn: res.sdnn,
+            coherenceScore: res.coherenceScore,
+            coherenceLevel: res.coherenceLevel,
+            quality: res.quality,
+            isStillnessMode: res.isStillnessMode,
+            stillnessLevel: res.stillnessLevel,
+            stillnessLabel: res.stillnessLabel,
+            stillnessBadge: res.stillnessBadge,
+            rawIbis: res.rawIbis,
+          },
+        });
+      } else {
+        // Offline: save to local IndexedDB
+        try {
+          await savePendingScan(res);
+          setOfflineMsg("Saved offline. Will sync when back online.");
+          setTimeout(() => setOfflineMsg(""), 4000);
+        } catch (err) {
+          console.error("Failed to save offline:", err);
+          setErrorMsg("Failed to save scan locally. Please try again.");
+          setState("error");
+          return;
+        }
+      }
       setState("results");
     } catch (e: any) {
       console.error(e);

@@ -1,8 +1,9 @@
 import { ReactNode } from "react";
 import { Link, useRoute, useLocation } from "wouter";
-import { HeartPulse, Activity, History, Leaf, LogOut, Shield } from "lucide-react";
+import { HeartPulse, Activity, History, Leaf, LogOut, Shield, Wifi } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
+import { useOffline } from "@/hooks/use-offline";
 
 interface LayoutProps {
   children: ReactNode;
@@ -11,6 +12,7 @@ interface LayoutProps {
 export function Layout({ children }: LayoutProps) {
   const { user, isAdmin, logout } = useAuth();
   const [, navigate] = useLocation();
+  const { isOnline } = useOffline();
 
   const handleLogout = async () => {
     await logout();
@@ -27,6 +29,12 @@ export function Layout({ children }: LayoutProps) {
           </h1>
         </div>
         <div className="flex items-center gap-2">
+          {!isOnline && (
+            <div className="flex items-center gap-1 px-2 py-1 bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 rounded-full text-xs font-medium">
+              <Wifi className="w-3 h-3" />
+              <span>Offline</span>
+            </div>
+          )}
           {isAdmin && (
             <Link href="/admin">
               <button className="p-2 rounded-lg hover:bg-muted transition-colors text-primary" title="Admin Portal">
