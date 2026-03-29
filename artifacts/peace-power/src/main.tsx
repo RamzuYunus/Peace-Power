@@ -2,7 +2,8 @@ import { createRoot } from "react-dom/client";
 import App from "./App";
 import "./index.css";
 import { registerServiceWorker } from "@/hooks/use-offline";
-import { setupAutoSync, initOfflineDB } from "@/lib/offline-db";
+import { initOfflineDB } from "@/lib/offline-db";
+import { setupAutoSync } from "@/lib/offline-sync";
 
 // Initialize offline support
 (async () => {
