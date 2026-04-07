@@ -1,0 +1,92 @@
+root@peace:/opt/peace-power/lib/db# pm2 status
+curl http://localhost:8080/api/healthz
+┌────┬────────────────────┬──────────┬──────┬───────────┬──────────┬──────────┐
+│ id │ name               │ mode     │ ↺    │ status    │ cpu      │ memory   │
+├────┼────────────────────┼──────────┼──────┼───────────┼──────────┼──────────┤
+│ 0  │ api-server         │ fork     │ 932  │ online    │ 0%       │ 95.4mb   │
+│ 1  │ web                │ fork     │ 0    │ online    │ 0%       │ 86.1mb   │
+└────┴────────────────────┴──────────┴──────┴───────────┴──────────┴──────────┘
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <script type="module">
+import { createHotContext } from "/@vite/client";
+const hot = createHotContext("/__dummy__runtime-error-plugin");
+
+function sendError(error) {
+  if (!(error instanceof Error)) {
+    error = new Error("(unknown runtime error)");
+  }
+  const serialized = {
+    message: error.message,
+    stack: error.stack,
+  };
+  hot.send("runtime-error-plugin:error", serialized);
+}
+
+// Only notify the parent frame after the server confirms the error passed
+// the filter and the overlay will be shown.
+hot.on("runtime-error-plugin:notify-parent", () => {
+  try {
+    window.parent.postMessage({ type: "runtime-error", id: null }, "*");
+  } catch (_) {}
+});
+
+window.addEventListener("error", (evt) => {
+  sendError(evt.error);
+});
+
+window.addEventListener("unhandledrejection", (evt) => {
+  sendError(evt.reason);
+});
+</script>
+
+    <script type="module" src="/@vite/client"></script>
+
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#2F8B7E" />
+    <meta name="description" content="Peace Power: A global initiative to unite those who want peace through heart coherence measurement." />
+    
+    <!-- Open Graph / Social Media Meta Tags (WhatsApp, Facebook, LinkedIn) -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Peace Power" />
+    <meta property="og:description" content="Unite through the power of the heart. Measure your heart coherence and join the global peace initiative." />
+    <meta property="og:image" content="/og-image.png" />
+    <meta property="og:image:width" content="1024" />
+    <meta property="og:image:height" content="1024" />
+    <meta property="og:url" content="https://peacepowerheart.replit.dev/" />
+    <meta property="og:site_name" content="Peace Power" />
+    
+    <!-- Twitter Card Meta Tags -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Peace Power" />
+    <meta name="twitter:description" content="Unite through the power of the heart. Measure your heart coherence and join the global peace initiative." />
+    <meta name="twitter:image" content="/og-image.png" />
+    
+    <!-- Apple PWA Meta Tags -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Peace Power" />
+    
+    <title>Peace Power</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/service-worker.js').catch((err) => {
+            console.log('ServiceWorker registration failed: ', err);
+          });
+        });
+      }
+    </script>
+  </body>
+</html>
