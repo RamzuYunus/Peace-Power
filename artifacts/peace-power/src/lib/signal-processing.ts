@@ -68,6 +68,9 @@ export interface ScanResult {
   stillnessLabel: string;
   stillnessBadge: string;
   rawIbis: number[];  // stored for retroactive recalculation
+  contactQuality: number;  // 0-100%, signal strength indicator
+  contactWarning: boolean; // true if weak signal detected
+  rmssdCorrected: boolean; // true if RMSSD was auto-corrected due to poor contact
 }
 
 /** Detect stillness level from precise (unrounded) metrics. */
@@ -229,7 +232,7 @@ export function processPpgSignal(timestampsMs: number[], values: number[]): Scan
     heartRate: 0, rmssd: 0, sdnn: 0, coherenceScore: 0,
     coherenceLevel: "Low", validPeaks: validPeakCount, quality: "Poor",
     isStillnessMode: false, stillnessLevel: 0, stillnessLabel: "", stillnessBadge: "",
-    rawIbis: [],
+    rawIbis: [], contactQuality: 0, contactWarning: true, rmssdCorrected: false,
   };
 
   if (ibis.length < 5) return emptyResult;
@@ -304,9 +307,31 @@ export function processPpgSignal(timestampsMs: number[], values: number[]): Scan
     if (freq > 0.15 && freq <= 0.4) totalHfPower += power[i];
   }
 
-  // G. Waveform Flatness Check
+  // G. Waveform Flatness Check & Contact Quality
   const flatnessRatio = totalAllPower > 0 ? totalHfPower / totalAllPower : 0;
   const isFlat = flatnessRatio < FLATNESS_RATIO_THRESHOLD;
+
+  // Contact quality based on peak amplitude and signal strength
+  // High amplitude peaks = good finger contact, low amplitude = hovering/weak contact
+  let peakAmplitude = 0;
+  for (const peak of peaks) {
+    peakAmplitude = Math.max(peakAmplitude, peak.val);
+  }
+  
+  // Scale contact quality 0-100 based on peak amplitude and valid peaks
+  const amplitudeScore = Math.min(100, (peakAmplitude / 50) * 100);
+  const peakCountScore = Math.min(100, (validPeakCount / Math.max(1, expectedPeaks * 0.9)) * 100);
+  const contactQuality = Math.round((amplitudeScore + peakCountScore) / 2);
+  
+  const contactWarning = contactQuality < 50;
+  let rmssdCorrected = false;
+  let correctedRmssd = rmssdPrecise;
+  
+  // Auto-correct RMSSD if contact is poor (multiply by 2.5 to get original)
+  if (contactWarning && rmssdPrecise > 0) {
+    correctedRmssd = rmssdPrecise / 2.5;
+    rmssdCorrected = true;
+  }
 
   // H. Deep Stillness Detection (BEFORE returning coherence score)
   // Uses precise (unrounded) SDNN and RMSSD to avoid rounding artifacts.
@@ -317,7 +342,7 @@ export function processPpgSignal(timestampsMs: number[], values: number[]): Scan
       timestamp: Date.now(),
       durationSeconds: durationSec,
       heartRate,
-      rmssd,
+      rmssd: Math.round(correctedRmssd),
       sdnn,
       coherenceScore: 10,
       coherenceLevel: "Deep Stillness",
@@ -328,6 +353,9 @@ export function processPpgSignal(timestampsMs: number[], values: number[]): Scan
       stillnessLabel: stillnessMatch.label,
       stillnessBadge: stillnessMatch.badge,
       rawIbis: ibis,
+      contactQuality,
+      contactWarning,
+      rmssdCorrected,
     };
   }
 
@@ -343,7 +371,9 @@ export function processPpgSignal(timestampsMs: number[], values: number[]): Scan
   return {
     timestamp: Date.now(),
     durationSeconds: durationSec,
-    heartRate, rmssd, sdnn,
+    heartRate, 
+    rmssd: Math.round(correctedRmssd),
+    sdnn,
     coherenceScore, coherenceLevel,
     validPeaks: validPeakCount,
     quality,
@@ -352,5 +382,8 @@ export function processPpgSignal(timestampsMs: number[], values: number[]): Scan
     stillnessLabel: "",
     stillnessBadge: "",
     rawIbis: ibis,
+    contactQuality,
+    contactWarning,
+    rmssdCorrected,
   };
 }

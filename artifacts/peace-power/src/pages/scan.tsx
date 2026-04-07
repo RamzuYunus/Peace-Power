@@ -285,6 +285,13 @@ export default function Scan() {
                 <p className="text-muted-foreground leading-relaxed">
                   Place your fingertip completely over your phone's rear camera lens. The flash will turn on automatically.
                 </p>
+                <div className="bg-red-50 dark:bg-red-950/30 text-red-800 dark:text-red-200 p-4 rounded-xl text-sm text-left flex gap-3 items-start border border-red-200 dark:border-red-800/50">
+                  <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-bold mb-1">⚠️ FINGER CONTACT CRITICAL</p>
+                    <p className="text-xs">If finger is NOT touching camera, RMSSD will be inflated 2–4x. PRESS FINGER FLAT against camera + flash for accurate readings. Hovering = unreliable HRV.</p>
+                  </div>
+                </div>
                 <div className="bg-amber-50 dark:bg-amber-950/30 text-amber-800 dark:text-amber-200 p-4 rounded-xl text-sm text-left flex gap-3 items-start border border-amber-200 dark:border-amber-800/50">
                   <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
                   <p>Hold still and breathe with the pacer for the full {selectedDuration} minutes for accurate results.</p>
@@ -503,6 +510,49 @@ export default function Scan() {
                   </div>
                 </motion.div>
               )}
+
+              {/* Contact Quality Warning */}
+              {result.contactWarning && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="bg-orange-50 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-800/50 rounded-2xl p-4 text-center"
+                >
+                  <p className="text-sm font-bold text-orange-700 dark:text-orange-300 mb-1">⚠️ Weak Signal Detected</p>
+                  <p className="text-xs text-orange-700/80 dark:text-orange-300/80">
+                    Press finger firmly against camera for accurate RMSSD. Contact Quality: <strong>{result.contactQuality}%</strong>
+                  </p>
+                  {result.rmssdCorrected && (
+                    <p className="text-xs text-orange-600 dark:text-orange-400 mt-2 font-mono">
+                      ⚙️ RMSSD auto-corrected for poor contact
+                    </p>
+                  )}
+                </motion.div>
+              )}
+
+              {/* Contact Quality Meter (all scans) */}
+              <div className="bg-card border border-border/50 rounded-2xl p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Contact Quality</p>
+                  <p className="text-sm font-bold">{result.contactQuality}%</p>
+                </div>
+                <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+                  <div
+                    className={cn(
+                      "h-full rounded-full transition-all",
+                      result.contactQuality >= 75 ? "bg-green-500" :
+                      result.contactQuality >= 50 ? "bg-yellow-500" :
+                      "bg-red-500"
+                    )}
+                    style={{ width: `${result.contactQuality}%` }}
+                  />
+                </div>
+                <p className="text-[10px] text-muted-foreground mt-2">
+                  {result.contactQuality >= 75 ? "✓ Excellent finger contact" :
+                   result.contactQuality >= 50 ? "~ Fair contact, results may vary" :
+                   "✗ Poor contact, RMSSD unreliable"}
+                </p>
+              </div>
 
               {/* Standard Coherence Card */}
               {!result.isStillnessMode && (
