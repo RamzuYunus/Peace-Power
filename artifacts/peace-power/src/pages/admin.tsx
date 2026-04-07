@@ -312,16 +312,56 @@ function MemberCard({ member, isExpanded, onToggle, onToggleAdmin, coherenceColo
               <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Scan History</h4>
               <div className="max-h-48 overflow-y-auto space-y-2 pr-1">
                 {memberScans!.map((scan: any) => (
-                  <div key={scan.id} className="flex items-center justify-between text-sm bg-card border border-border/50 rounded-xl px-3 py-2">
-                    <div>
-                      <div className="font-medium text-xs">{format(new Date(scan.scannedAt), "MMM d, h:mm a")}</div>
-                      <div className="text-xs text-muted-foreground">HR: {scan.heartRate} bpm · RMSSD: {scan.rmssd} ms</div>
-                    </div>
-                    <div className="text-right">
-                      <div className={cn("text-[10px] px-2 py-0.5 rounded-full border font-medium", coherenceColor(scan.coherenceLevel))}>
-                        {scan.coherenceLevel}
+                  <div key={scan.id} className="flex flex-col gap-2 text-sm bg-card border border-border/50 rounded-xl px-3 py-2">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="font-medium text-xs">{format(new Date(scan.scannedAt), "MMM d, h:mm a")}</div>
+                        <div className="text-xs text-muted-foreground">HR: {scan.heartRate} bpm · RMSSD: {scan.rmssd} ms</div>
                       </div>
-                      <div className="text-xs text-muted-foreground mt-0.5">{scan.coherenceScore.toFixed(1)}</div>
+                      <div className="text-right">
+                        <div className={cn("text-[10px] px-2 py-0.5 rounded-full border font-medium", coherenceColor(scan.coherenceLevel))}>
+                          {scan.coherenceLevel}
+                        </div>
+                        <div className="text-xs text-muted-foreground mt-0.5">{scan.coherenceScore.toFixed(1)}</div>
+                      </div>
+                    </div>
+                    
+                    {/* Signal Quality & Contact Quality Row */}
+                    <div className="flex items-center gap-3 text-[10px]">
+                      {/* Signal Quality Badge */}
+                      <div className={cn(
+                        "px-2 py-0.5 rounded-full border font-medium",
+                        scan.quality === "Excellent" ? "bg-green-50 text-green-700 border-green-200 dark:bg-green-950/40 dark:text-green-300 dark:border-green-800/50" :
+                        scan.quality === "Good" ? "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800/50" :
+                        scan.quality === "Fair" ? "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800/50" :
+                        "bg-red-50 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-300 dark:border-red-800/50"
+                      )}>
+                        Signal: {scan.quality}
+                      </div>
+                      
+                      {/* Contact Quality Badge with color bar */}
+                      <div className="flex items-center gap-1.5 flex-1">
+                        <span className="text-muted-foreground shrink-0">Contact:</span>
+                        <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden min-w-[30px]">
+                          <div
+                            className={cn(
+                              "h-full",
+                              scan.contactQuality >= 75 ? "bg-green-500" :
+                              scan.contactQuality >= 50 ? "bg-yellow-500" :
+                              "bg-red-500"
+                            )}
+                            style={{ width: `${scan.contactQuality || 0}%` }}
+                          />
+                        </div>
+                        <span className={cn(
+                          "text-[9px] font-medium shrink-0 w-6 text-right",
+                          scan.contactQuality >= 75 ? "text-green-600 dark:text-green-400" :
+                          scan.contactQuality >= 50 ? "text-yellow-600 dark:text-yellow-400" :
+                          "text-red-600 dark:text-red-400"
+                        )}>
+                          {scan.contactQuality || 0}%
+                        </span>
+                      </div>
                     </div>
                   </div>
                 ))}
