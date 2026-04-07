@@ -10,7 +10,7 @@ import {
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { Heart, Users, Activity, Wind, ArrowLeft, ChevronDown, ChevronUp, Shield, ShieldOff, LogOut, RefreshCw, CheckCircle2, AlertCircle } from "lucide-react";
+import { Heart, Users, Activity, Wind, ArrowLeft, ChevronDown, ChevronUp, Shield, ShieldOff, LogOut, RefreshCw, CheckCircle2, AlertCircle, Edit2, Save, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function Admin() {
@@ -22,6 +22,9 @@ export default function Admin() {
   const [confirmLogout, setConfirmLogout] = useState(false);
   const [reclassifyStatus, setReclassifyStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
   const [reclassifyResult, setReclassifyResult] = useState<{ total: number; updated: number; unchanged: number } | null>(null);
+  const [editingContent, setEditingContent] = useState<string | null>(null);
+  const [contentValues, setContentValues] = useState<Record<string, string>>({});
+  const [contentSaving, setContentSaving] = useState<string | null>(null);
 
   const handleReclassify = async () => {
     setReclassifyStatus("loading");
@@ -37,6 +40,24 @@ export default function Admin() {
     }
   };
 
+  const handleSaveContent = async (key: string) => {
+    setContentSaving(key);
+    try {
+      const res = await fetch(`/api/content/${key}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ value: contentValues[key] }),
+      });
+      if (!res.ok) throw new Error("Failed to save");
+      setEditingContent(null);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setContentSaving(null);
+    }
+  };
+
   const { data: members, isLoading: membersLoading } = useGetAdminMembers({
     query: { enabled: isAdmin },
   });
@@ -44,6 +65,22 @@ export default function Admin() {
     query: { enabled: isAdmin },
   });
   const setAdminRole = useSetAdminRole();
+
+  // Load content on mount
+  React.useEffect(() => {
+    const loadContent = async () => {
+      try {
+        const res = await fetch("/api/content", { credentials: "include" });
+        if (res.ok) {
+          const data = await res.json();
+          setContentValues(data);
+        }
+      } catch (err) {
+        console.error("Failed to load content:", err);
+      }
+    };
+    if (isAdmin) loadContent();
+  }, [isAdmin]);
 
   if (authLoading) {
     return (
@@ -165,8 +202,9 @@ export default function Admin() {
         )}
 
         {/* Admin Tools */}
-        <div className="bg-card border border-border/60 rounded-2xl p-6 shadow-sm space-y-4">
-          <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider">Admin Tools</h3>
+        <div className="bg-card border border-border/60 rounded-2xl p-6 shadow-sm space-y-6">
+          <div>
+            <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider mb-4">Admin Tools</h3>
           <div className="flex flex-col sm:flex-row sm:items-center gap-3">
             <button
               onClick={handleReclassify}
@@ -197,9 +235,71 @@ export default function Admin() {
               </div>
             )}
           </div>
-          <p className="text-xs text-muted-foreground leading-relaxed">
-            Re-runs the tiered Deep Stillness detection (Sakīnah I–II, Qalb Polished, Fanā' Union) over all stored scans. Uses raw IBI data where available for precise recalculation; falls back to stored HR/SDNN/RMSSD.
-          </p>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              Re-runs the tiered Deep Stillness detection (Sakīnah I–II, Qalb Polished, Fanā' Union) over all stored scans. Uses raw IBI data where available for precise recalculation; falls back to stored HR/SDNN/RMSSD.
+            </p>
+          </div>
+
+          <div className="border-t border-border/50 pt-6">
+            <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider mb-4">Edit Content</h4>
+            <div className="space-y-4">
+              {[
+                { key: "landing_headline", label: "Landing Page Headline" },
+                { key: "landing_description", label: "Landing Page Description" },
+                { key: "scan_instructions", label: "Scan Instructions" },
+                { key: "scan_warning", label: "Scan Contact Warning" },
+              ].map(({ key, label }) => (
+                <div key={key} className="bg-background/50 border border-border/30 rounded-xl p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="text-xs font-medium text-muted-foreground">{label}</label>
+                    {editingContent !== key && (
+                      <button
+                        onClick={() => {
+                          setEditingContent(key);
+                          setContentValues(prev => ({ ...prev, [key]: prev[key] || "" }));
+                        }}
+                        className="text-xs px-2 py-1 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/30 rounded-lg transition-colors flex items-center gap-1"
+                      >
+                        <Edit2 className="w-3 h-3" />
+                        Edit
+                      </button>
+                    )}
+                  </div>
+                  {editingContent === key ? (
+                    <div className="space-y-2">
+                      <textarea
+                        value={contentValues[key] || ""}
+                        onChange={(e) => setContentValues(prev => ({ ...prev, [key]: e.target.value }))}
+                        className="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm font-mono resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        rows={3}
+                      />
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => handleSaveContent(key)}
+                          disabled={contentSaving === key}
+                          className="flex-1 text-xs px-3 py-1.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 flex items-center justify-center gap-1"
+                        >
+                          <Save className="w-3 h-3" />
+                          {contentSaving === key ? "Saving..." : "Save"}
+                        </button>
+                        <button
+                          onClick={() => setEditingContent(null)}
+                          className="flex-1 text-xs px-3 py-1.5 bg-muted text-muted-foreground rounded-lg hover:bg-muted/80 flex items-center justify-center gap-1"
+                        >
+                          <X className="w-3 h-3" />
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-xs text-foreground/70 leading-relaxed line-clamp-2">
+                      {contentValues[key] || "Loading..."}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
 
         {/* Members Table */}
